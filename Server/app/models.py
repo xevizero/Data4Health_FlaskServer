@@ -1,6 +1,7 @@
 from app import db
-
-from sqlalchemy.ext.declarative import declarative_base
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+from app import login
 
 metadata = db.Model.metadata
 
@@ -15,7 +16,7 @@ class EmergencyServicesAPI(db.Model):
     EmergencyServicePhoneNumber = db.Column(db.String)
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'Users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -23,11 +24,17 @@ class User(db.Model):
     Surname = db.Column(db.String, nullable=False)
     Email = db.Column(db.String, nullable=False)
     Password_Hash = db.Column(db.String(128), nullable=False)
-    Birthday = db.Column(db.Date)
+    Birthday = db.Column(db.Date, nullable=False)
     UserPhoneNumber = db.Column(db.String)
 
     def __repr__(self):
         return '<User {}>'.format(self.Name)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class BloodPressure(User):
@@ -135,3 +142,8 @@ class RunWaypoint(db.Model):
     OptionalName = db.Column(db.String)
 
     Run = db.relationship('Run')
+
+
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))

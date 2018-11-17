@@ -402,6 +402,7 @@ WaypointIndex</ColNames>
     <column id="98" parent="16" name="Password_Hash">
       <Position>5</Position>
       <DataType>VARCHAR(128)|0s</DataType>
+      <NotNull>1</NotNull>
     </column>
     <column id="99" parent="16" name="Birthday">
       <Position>6</Position>
