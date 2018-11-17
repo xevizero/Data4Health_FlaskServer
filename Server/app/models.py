@@ -31,10 +31,10 @@ class User(UserMixin, db.Model):
         return '<User {}>'.format(self.Name)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.Password_Hash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return check_password_hash(self.Password_Hash, password)
 
 
 class BloodPressure(User):
