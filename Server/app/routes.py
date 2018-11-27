@@ -8,7 +8,9 @@ from flask_login import login_required
 from flask import request
 from werkzeug.urls import url_parse
 from app import db
-from app.forms import RegistrationForm
+from app.forms import RegistrationForm, GeneralQueryForm
+import json
+
 
 
 @app.route('/')
@@ -56,3 +58,43 @@ def register():
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
+
+
+@app.route('/sqlquery', methods=['GET', 'POST'])
+@login_required
+def sqlquery():
+    names='aspetta la tua risposta'
+    jresponse=None
+    form = GeneralQueryForm()
+    if form.validate_on_submit():
+        stringsql = form.query.data
+        print(stringsql)
+        result = db.engine.execute(stringsql)
+        result2 = db.engine.execute(stringsql)
+
+
+        names=[]
+        for row in result:
+            names.append(row)
+        print(names)
+
+
+
+        jresponse = json.dumps([(dict(row.items())) for row in result2])
+        print(jresponse)
+
+
+    return render_template('sqlquery.html', title='MY DEVELOP', form = form , tab=names,jtext=jresponse)
+
+
+
+@app.route('/android')
+def android():
+      ciao= request.args.get('username')
+      result = db.engine.execute("SELECT * FROM Users WHERE Name=" +"'" + ciao+"'")
+      print(result)
+
+      jresponse = json.dumps([(dict(row.items())) for row in result])
+      print(jresponse)
+
+      return jresponse

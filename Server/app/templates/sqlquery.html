@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>My Develop</h1>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.query.label }}<br>
+            {{ form.query(size=32) }}<br>
+            {% for error in form.query.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+
+        {% if tab =='aspetta la tua risposta'%}
+            <p>
+            {{ result }}
+            </p>
+        {% endif %}
+
+        <p>{{ form.submit() }}</p>
+
+    </form>
+
+
+    <style>
+    table ,td{
+        border:1px solid green;
+    }
+    </style>
+    {% if tab !='aspetta la tua risposta' %}
+    <table>
+        {% for res in tab %}
+            <tr>
+            {% for res2 in res %}
+                <td>
+                {{ res2 }}
+                </td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+
+
+    </table>
+    {% endif %}
+
+    {% if jtext != None %}
+        <textarea row="40" cols="200">
+            {{ jtext }}
+        </textarea>
+    {% endif %}
+
+
+{% endblock %}
