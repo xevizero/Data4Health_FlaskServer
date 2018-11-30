@@ -5,9 +5,6 @@ import enum
 
 metadata = db.Model.metadata
 
-class SexEnum(enum.Enum):
-    female = 'F'
-    male = 'M'
 
 class EmergencyServicesAPI(db.Model):
     __tablename__ = 'EmergencyServicesAPI'
@@ -29,11 +26,13 @@ class User(UserMixin, db.Model):
     passwordHash = db.Column(db.String(128), nullable=False)
     birthday = db.Column(db.Date, nullable=False)
     userPhoneNumber = db.Column(db.String)
-    sex = db.Column(db.Enum(SexEnum))
+    sex = db.Column(db.String, nullable=False)
+
+    #settings = db.relationship('UserSetting', backref='User', lazy='dynamic')
 
 
     def __repr__(self):
-        return '<User {}>'.format(self.Name)
+        return '<User {}>'.format(self.name)
 
     def set_password(self, password):
         self.passwordHash = generate_password_hash(password)
@@ -76,10 +75,12 @@ class HeartRate(User):
     heartRateTimestamp = db.Column(db.DateTime, nullable=False)
 
 
-class UserSetting(User):
+class UserSetting(db.Model):
     __tablename__ = 'UserSetting'
 
-    userId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    userId = db.Column(db.Integer,
+                       #db.ForeignKey('User.id'),
+                       primary_key=True)
     defaultLocationLat = db.Column(db.Float, nullable=False)
     defaultLocationLong = db.Column(db.Float, nullable=False)
     automatedSOSOn = db.Column(db.Boolean, nullable=False)

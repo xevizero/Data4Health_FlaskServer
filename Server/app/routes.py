@@ -5,6 +5,8 @@ from app.models import User, UserSetting
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 import json
+import datetime
+
 
 @app.route('/')
 @app.route('/index')
@@ -85,17 +87,22 @@ def android():
 
 @app.route('/android/register')
 def android_register():
-    name = request.args.get('username')
+    name = request.args.get('name')
     surname = request.args.get('surname')
     email = request.args.get('email')
     userPhoneNumber = request.args.get('userPhoneNumber')
-    birthday = request.args.get('birthday')
+    birthday_str = request.args.get('birthday')
+    birthday = datetime.datetime.strptime(birthday_str, "%Y-%m-%d").date()
     password = request.args.get('password')
     sex = request.args.get('sex')
-    automatedSOSOn = request.args.get('automatedSOSn')
-    developerAccount = request.args.get('developerAccount')
-    anonymousDataSharingON = request.args.get('anonymousDataSharingON')
     present = User.query.filter_by(email=email).first()
+
+    defaultLocationLat = float(0.0)
+    defaultLocationLong = float(0.0)
+    automatedSOSOn = bool(request.args.get('automatedSOSOn'))
+    developerAccount = bool(request.args.get('developerAccount'))
+    anonymousDataSharingON = bool(request.args.get('anonymousDataSharingON'))
+
     if present:
         response = {'Response': 'Error', 'Message': 'Already used email.'}
         jresponse = json.dumps(response)
@@ -104,13 +111,13 @@ def android_register():
     user = User(name=name, surname=surname, email=email,
                 userPhoneNumber=userPhoneNumber, birthday=birthday, sex=sex)
     user.set_password(password)
-    id = user.get_id()
-    defaultLocationLat = 0.0
-    defaultLocationLong = 0.0
-    userSetting = UserSetting(userId=id, defaultLocationLat=defaultLocationLat,
+    db.session.add(user)
+    db.session.commit()
+
+    userSetting = UserSetting(userId=user.get_id(), defaultLocationLat=defaultLocationLat,
                               defaultLocationLong=defaultLocationLong, automatedSOSOn=automatedSOSOn,
                               developerAccount=developerAccount, anonymousDataSharingON=anonymousDataSharingON)
-    db.session.add(user)
+
     db.session.add(userSetting)
     db.session.commit()
     response = {'Response': 'Success', 'Message': 'The User has been correctly registered.'}
