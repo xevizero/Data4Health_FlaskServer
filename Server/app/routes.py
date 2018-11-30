@@ -1,17 +1,10 @@
-from flask import render_template, flash, redirect, url_for
-from app import app
-from app.forms import LoginForm
-from flask_login import current_user, login_user
+from flask import render_template, flash, redirect, url_for, request
+from app import app, db
+from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
 from app.models import User
-from flask_login import logout_user
-from flask_login import login_required
-from flask import request
+from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
-from app import db
-from app.forms import RegistrationForm, GeneralQueryForm
 import json
-
-
 
 @app.route('/')
 @app.route('/index')
