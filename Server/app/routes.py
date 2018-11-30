@@ -19,7 +19,7 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(Email=form.email.data).first()
+        user = User.query.filter_by(email=form.email.data).first()
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
@@ -43,8 +43,8 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(Name=form.name.data, Surname=form.surname.data, Email=form.email.data,
-                    UserPhoneNumber=form.phonenumber.data, Birthday=form.birthday.data)
+        user = User(name=form.name.data, surname=form.surname.data, email=form.email.data,
+                    userPhoneNumber=form.phonenumber.data, birthday=form.birthday.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -64,20 +64,13 @@ def sqlquery():
         print(stringsql)
         result = db.engine.execute(stringsql)
         result2 = db.engine.execute(stringsql)
-
-
         names=[]
         for row in result:
             names.append(row)
         print(names)
-
-
-
         jresponse = json.dumps([(dict(row.items())) for row in result2])
         print(jresponse)
-
-
-    return render_template('sqlquery.html', title='MY DEVELOP', form = form , tab=names,jtext=jresponse)
+    return render_template('sqlquery.html', title='My Develop', form=form , tab=names, jtext=jresponse)
 
 
 

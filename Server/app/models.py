@@ -1,13 +1,12 @@
-from app import db
+from app import db, login
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from app import login
 
 metadata = db.Model.metadata
 
 
 class EmergencyServicesAPI(db.Model):
-    __tablename__ = 'EmergencyServicesAPIs'
+    __tablename__ = 'EmergencyServicesAPI'
 
     EmergencyServiceId = db.Column(db.Integer, primary_key=True)
     AreaCode = db.Column(db.String, nullable=False)
@@ -17,131 +16,131 @@ class EmergencyServicesAPI(db.Model):
 
 
 class User(UserMixin, db.Model):
-    __tablename__ = 'Users'
+    __tablename__ = 'User'
 
     id = db.Column(db.Integer, primary_key=True)
-    Name = db.Column(db.String, nullable=False)
-    Surname = db.Column(db.String, nullable=False)
-    Email = db.Column(db.String, nullable=False)
-    Password_Hash = db.Column(db.String(128), nullable=False)
-    Birthday = db.Column(db.Date, nullable=False)
-    UserPhoneNumber = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    surname = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, nullable=False)
+    passwordHash = db.Column(db.String(128), nullable=False)
+    birthday = db.Column(db.Date, nullable=False)
+    userPhoneNumber = db.Column(db.String)
 
     def __repr__(self):
         return '<User {}>'.format(self.Name)
 
     def set_password(self, password):
-        self.Password_Hash = generate_password_hash(password)
+        self.passwordHash = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.Password_Hash, password)
+        return check_password_hash(self.passwordHash, password)
 
 
 class BloodPressure(User):
     __tablename__ = 'BloodPressure'
 
-    BloodPressureUserId = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    BloodPressureLowValue = db.Column(db.Integer, nullable=False)
-    BloodPressureHighValue = db.Column(db.Integer, nullable=False)
-    BloodPressureTimestamp = db.Column(db.DateTime, nullable=False)
+    bloodPressureUserId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    bloodPressureLowValue = db.Column(db.Integer, nullable=False)
+    bloodPressureHighValue = db.Column(db.Integer, nullable=False)
+    bloodPressureTimestamp = db.Column(db.DateTime, nullable=False)
 
 
 class Caretaker(User):
-    __tablename__ = 'Caretakers'
+    __tablename__ = 'Caretaker'
 
-    CaretakerId = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    ObservedUserId = db.Column(db.Integer, nullable=False)
-    Subscription = db.Column(db.Boolean, nullable=False)
+    caretakerId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    observedUserId = db.Column(db.Integer, nullable=False)
+    subscription = db.Column(db.Boolean, nullable=False)
 
 
 class DailyStep(User):
-    __tablename__ = 'DailySteps'
+    __tablename__ = 'DailyStep'
 
-    DailyStepsId = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    StepsValue = db.Column(db.Integer, nullable=False)
-    StepsDate = db.Column(db.Date, nullable=False)
+    dailyStepsId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    stepsValue = db.Column(db.Integer, nullable=False)
+    stepsDate = db.Column(db.Date, nullable=False)
 
 
 class HeartRate(User):
     __tablename__ = 'HeartRate'
 
-    HeartRateUserId = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    HeartRateValue = db.Column(db.Integer, nullable=False)
-    HeartRateTimestamp = db.Column(db.DateTime, nullable=False)
+    heartRateUserId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    heartRateValue = db.Column(db.Integer, nullable=False)
+    heartRateTimestamp = db.Column(db.DateTime, nullable=False)
 
 
 class UserSetting(User):
-    __tablename__ = 'UserSettings'
+    __tablename__ = 'UserSetting'
 
-    UserId = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    DefaultLocationLat = db.Column(db.Float, nullable=False)
-    DefaultLocationLong = db.Column(db.Float, nullable=False)
-    AutomatedSOSOn = db.Column(db.Boolean, nullable=False)
-    DeveloperAccount = db.Column(db.Boolean, nullable=False)
-    AnonymousDataSharingON = db.Column(db.Boolean, nullable=False)
+    userId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    defaultLocationLat = db.Column(db.Float, nullable=False)
+    defaultLocationLong = db.Column(db.Float, nullable=False)
+    automatedSOSOn = db.Column(db.Boolean, nullable=False)
+    developerAccount = db.Column(db.Boolean, nullable=False)
+    anonymousDataSharingON = db.Column(db.Boolean, nullable=False)
 
 
 class UsersLocation(User):
     __tablename__ = 'UsersLocation'
 
-    UsersLocationId = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    UserLat = db.Column(db.Float, nullable=False)
-    UserLong = db.Column(db.Float, nullable=False)
-    LocationUpdateTimestamp = db.Column(db.DateTime, nullable=False)
+    usersLocationId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    userLat = db.Column(db.Float, nullable=False)
+    userLong = db.Column(db.Float, nullable=False)
+    locationUpdateTimestamp = db.Column(db.DateTime, nullable=False)
 
 
 class Weight(User):
     __tablename__ = 'Weight'
 
-    UserIdWeight = db.Column(db.ForeignKey('Users.id'), primary_key=True)
-    WeightValue = db.Column(db.Float, nullable=False)
-    WeightTimestamp = db.Column(db.DateTime, nullable=False)
+    userIdWeight = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    weightValue = db.Column(db.Float, nullable=False)
+    weightTimestamp = db.Column(db.DateTime, nullable=False)
 
 
 class Run(db.Model):
     __tablename__ = 'Run'
 
-    RunId = db.Column(db.Integer, primary_key=True)
-    EventName = db.Column(db.String, nullable=False)
-    Description = db.Column(db.String, nullable=False)
-    StartTime = db.Column(db.DateTime, nullable=False)
-    LocationLat = db.Column(db.Float, nullable=False)
-    LocationLong = db.Column(db.Float, nullable=False)
-    Public = db.Column(db.Boolean, nullable=False, server_default=db.text("false"))
-    OrganizerId = db.Column(db.ForeignKey('Users.id'), nullable=False)
+    runId = db.Column(db.Integer, primary_key=True)
+    eventName = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=False)
+    startTime = db.Column(db.DateTime, nullable=False)
+    locationLat = db.Column(db.Float, nullable=False)
+    locationLong = db.Column(db.Float, nullable=False)
+    public = db.Column(db.Boolean, nullable=False, server_default=db.text("false"))
+    organizerId = db.Column(db.ForeignKey('User.id'), nullable=False)
 
-    User = db.relationship('User')
-    Users = db.relationship('User', secondary='RunViewers')
+    user = db.relationship('User')
+    users = db.relationship('User', secondary='RunViewer')
 
 
 class RunParticipant(db.Model):
-    __tablename__ = 'RunParticipants'
+    __tablename__ = 'RunParticipant'
 
-    ParticipantsRunId = db.Column(db.ForeignKey('Run.RunId'), primary_key=True, nullable=False)
-    ParticipantsUserId = db.Column(db.ForeignKey('Users.id'), primary_key=True, nullable=False)
-    DataVisibility = db.Column(db.Boolean, nullable=False)
+    participantsRunId = db.Column(db.ForeignKey('Run.runId'), primary_key=True, nullable=False)
+    participantsUserId = db.Column(db.ForeignKey('User.id'), primary_key=True, nullable=False)
+    dataVisibility = db.Column(db.Boolean, nullable=False)
 
-    Run = db.relationship('Run')
-    User = db.relationship('User')
+    run = db.relationship('Run')
+    user = db.relationship('User')
 
 
 t_RunViewers = db.Table(
-    'RunViewers', metadata,
-    db.Column('ViewersRunId', db.ForeignKey('Run.RunId'), primary_key=True, nullable=False),
-    db.Column('ViewersUserId', db.ForeignKey('Users.id'), primary_key=True, nullable=False)
+    'RunViewer', metadata,
+    db.Column('ViewersRunId', db.ForeignKey('Run.runId'), primary_key=True, nullable=False),
+    db.Column('ViewersUserId', db.ForeignKey('User.id'), primary_key=True, nullable=False)
 )
 
 
 class RunWaypoint(db.Model):
-    __tablename__ = 'RunWaypoints'
+    __tablename__ = 'RunWaypoint'
 
-    PathRunId = db.Column(db.ForeignKey('Run.RunId'), primary_key=True, nullable=False)
-    WaypointIndex = db.Column(db.Integer, primary_key=True, nullable=False)
-    PathLat = db.Column(db.Float, nullable=False)
-    PathLong = db.Column(db.Float, nullable=False)
-    OptionalName = db.Column(db.String)
+    pathRunId = db.Column(db.ForeignKey('Run.runId'), primary_key=True, nullable=False)
+    waypointIndex = db.Column(db.Integer, primary_key=True, nullable=False)
+    pathLat = db.Column(db.Float, nullable=False)
+    pathLong = db.Column(db.Float, nullable=False)
+    optionalName = db.Column(db.String)
 
-    Run = db.relationship('Run')
+    run = db.relationship('Run')
 
 
 @login.user_loader
