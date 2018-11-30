@@ -26,3 +26,9 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(Email=email.data).first()
         if user is not None:
             raise ValidationError('Please use a different email address.')
+
+
+class GeneralQueryForm(FlaskForm):
+      query =StringField('Query', validators=[DataRequired()])
+      submit = SubmitField('Send')
+

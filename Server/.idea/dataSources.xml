@@ -18,11 +18,28 @@
         </library>
       </libraries>
     </data-source>
-    <data-source source="LOCAL" name="data4healthDB" uuid="9f7378dd-9c58-4367-b2e1-40408e4a096a">
+    <data-source source="LOCAL" name="app [2]" uuid="5bd01a10-f525-4f7a-b3d9-d5713b681bc9">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/data4healthDB.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\giacomo\PycharmProjects\Data4Health_FlaskServer\Server\app.db</jdbc-url>
+      <driver-properties>
+        <property name="enable_load_extension" value="true" />
+      </driver-properties>
+      <libraries>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.25.1/license.txt</url>
+        </library>
+        <library>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.25.1/sqlite-jdbc-3.25.1.jar</url>
+        </library>
+      </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="data4healthDB" uuid="fb656649-74ae-4f6d-a8b6-010a63c872d2">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\giacomo\PycharmProjects\Data4Health_FlaskServer\Server\data4healthDB.db</jdbc-url>
       <driver-properties>
         <property name="enable_load_extension" value="true" />
       </driver-properties>
