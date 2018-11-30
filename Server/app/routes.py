@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
-from app.models import User
+from app.models import User, UserSetting
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 import json
@@ -56,8 +56,8 @@ def register():
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
 def sqlquery():
-    names='aspetta la tua risposta'
-    jresponse=None
+    names = 'aspetta la tua risposta'
+    jresponse = None
     form = GeneralQueryForm()
     if form.validate_on_submit():
         stringsql = form.query.data
@@ -76,11 +76,44 @@ def sqlquery():
 
 @app.route('/android')
 def android():
-      ciao= request.args.get('username')
+      ciao = request.args.get('username')
       result = db.engine.execute("SELECT * FROM Users WHERE Name=" +"'" + ciao+"'")
       print(result)
-
       jresponse = json.dumps([(dict(row.items())) for row in result])
       print(jresponse)
-
       return jresponse
+
+@app.route('/android/register')
+def android_register():
+    name = request.args.get('username')
+    surname = request.args.get('surname')
+    email = request.args.get('email')
+    userPhoneNumber = request.args.get('userPhoneNumber')
+    birthday = request.args.get('birthday')
+    password = request.args.get('password')
+    sex = request.args.get('sex')
+    automatedSOSOn = request.args.get('automatedSOSn')
+    developerAccount = request.args.get('developerAccount')
+    anonymousDataSharingON = request.args.get('anonymousDataSharingON')
+    present = User.query.filter_by(email=email).first()
+    if present:
+        response = {'Response': 'Error', 'Message': 'Already used email.'}
+        jresponse = json.dumps(response)
+        print(jresponse)
+        return jresponse
+    user = User(name=name, surname=surname, email=email,
+                userPhoneNumber=userPhoneNumber, birthday=birthday, sex=sex)
+    user.set_password(password)
+    id = user.get_id()
+    defaultLocationLat = 0.0
+    defaultLocationLong = 0.0
+    userSetting = UserSetting(userId=id, defaultLocationLat=defaultLocationLat,
+                              defaultLocationLong=defaultLocationLong, automatedSOSOn=automatedSOSOn,
+                              developerAccount=developerAccount, anonymousDataSharingON=anonymousDataSharingON)
+    db.session.add(user)
+    db.session.add(userSetting)
+    db.session.commit()
+    response = {'Response': 'Success', 'Message': 'The User has been correctly registered.'}
+    jresponse = json.dumps(response)
+    print(jresponse)
+    return jresponse

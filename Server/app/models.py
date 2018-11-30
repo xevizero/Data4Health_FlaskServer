@@ -1,9 +1,13 @@
 from app import db, login
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+import enum
 
 metadata = db.Model.metadata
 
+class SexEnum(enum.Enum):
+    female = 'F'
+    male = 'M'
 
 class EmergencyServicesAPI(db.Model):
     __tablename__ = 'EmergencyServicesAPI'
@@ -25,6 +29,8 @@ class User(UserMixin, db.Model):
     passwordHash = db.Column(db.String(128), nullable=False)
     birthday = db.Column(db.Date, nullable=False)
     userPhoneNumber = db.Column(db.String)
+    sex = db.Column(db.Enum(SexEnum))
+
 
     def __repr__(self):
         return '<User {}>'.format(self.Name)
