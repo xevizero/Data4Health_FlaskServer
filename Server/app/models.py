@@ -51,6 +51,7 @@ class Caretaker(User):
     caretakerId = db.Column(db.ForeignKey('User.id'), primary_key=True)
     observedUserId = db.Column(db.Integer, nullable=False)
     subscription = db.Column(db.Boolean, nullable=False)
+    requestStatusCode = db.Column(db.Integer, nullable=False)
 
 
 class DailyStep(User):
