@@ -1,12 +1,15 @@
 from flask import render_template, flash, redirect, url_for, request
-from app import app, db
+from app import app, db,UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
 from app.models import User, UserSetting
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
-import json
-import datetime
+from werkzeug.utils import secure_filename
+import json, datetime, os
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 @app.route('/index')
@@ -76,14 +79,16 @@ def sqlquery():
 
 
 
-@app.route('/android')
+@app.route('/android', methods=['GET', 'POST'])
 def android():
-      ciao = request.args.get('username')
-      result = db.engine.execute("SELECT * FROM Users WHERE Name=" +"'" + ciao+"'")
-      print(result)
-      jresponse = json.dumps([(dict(row.items())) for row in result])
-      print(jresponse)
-      return jresponse
+      input_json = request.get_json(force=True)
+      print(input_json)
+      jresponse = json.dumps(input_json)
+      #result = db.engine.execute("SELECT * FROM Users WHERE Name=" +"'" + ciao+"'")
+      #print(result)
+      #jresponse = json.dumps([(dict(row.items())) for row in result])
+      #print(jresponse)
+      return 'Tutto ok'
 
 @app.route('/android/register')
 def android_register():
@@ -96,13 +101,11 @@ def android_register():
     password = request.args.get('password')
     sex = request.args.get('sex')
     present = User.query.filter_by(email=email).first()
-
     defaultLocationLat = float(0.0)
     defaultLocationLong = float(0.0)
     automatedSOSOn = bool(request.args.get('automatedSOSOn'))
     developerAccount = bool(request.args.get('developerAccount'))
     anonymousDataSharingON = bool(request.args.get('anonymousDataSharingON'))
-
     if present:
         response = {'Response': 'Error', 'Message': 'Already used email.'}
         jresponse = json.dumps(response)
@@ -113,7 +116,6 @@ def android_register():
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
-
     userSetting = UserSetting(userId=user.get_id(), defaultLocationLat=defaultLocationLat,
                               defaultLocationLong=defaultLocationLong, automatedSOSOn=automatedSOSOn,
                               developerAccount=developerAccount, anonymousDataSharingON=anonymousDataSharingON)
@@ -124,3 +126,23 @@ def android_register():
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
+
+@app.route('/uploads', methods=['GET', 'POST'])
+def uploads():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('uploaded_file',
+                                    filename=filename))
+    return 'Tutto ok'
