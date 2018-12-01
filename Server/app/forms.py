@@ -29,6 +29,6 @@ class RegistrationForm(FlaskForm):
 
 
 class GeneralQueryForm(FlaskForm):
-      query =StringField('Query', validators=[DataRequired()])
+      query = StringField('Query', validators=[DataRequired()])
       submit = SubmitField('Send')
 

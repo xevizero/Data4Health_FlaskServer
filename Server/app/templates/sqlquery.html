@@ -11,18 +11,18 @@
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
-
         {% if tab =='aspetta la tua risposta'%}
             <p>
             {{ result }}
             </p>
         {% endif %}
-
         <p>{{ form.submit() }}</p>
-
     </form>
-
-
+    <select method="post">
+        {% for colour in colours %}
+        <option value= "{{colour}}">{{ colour }}</option>"
+        {% endfor %}
+    </select>
     <style>
     table ,td{
         border:1px solid black;
@@ -39,16 +39,11 @@
             {% endfor %}
             </tr>
         {% endfor %}
-
-
     </table>
     {% endif %}
-
     {% if jtext != None %}
         <textarea row="40" cols="200">
             {{ jtext }}
         </textarea>
     {% endif %}
-
-
 {% endblock %}
