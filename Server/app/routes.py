@@ -7,6 +7,7 @@ from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import json, datetime, os
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -91,27 +92,43 @@ def android():
       return 'Tutto ok'
 
 
-@app.route('/android/register')
+@app.route('/android/register', methods=['GET', 'POST'])
 def android_register():
-    name = request.args.get('name')
-    surname = request.args.get('surname')
-    email = request.args.get('email')
-    userPhoneNumber = request.args.get('userPhoneNumber')
-    birthday_str = request.args.get('birthday')
+    name = request.form['name']
+    surname = request.form['surname']
+    email = request.form['email']
+    userPhoneNumber = request.form['userPhoneNumber']
+    birthday_str = request.form['birthday']
     birthday = datetime.datetime.strptime(birthday_str, "%Y-%m-%d").date()
-    password = request.args.get('password')
-    sex = request.args.get('sex')
+    password = request.form['password']
+    sex = request.form['sex']
     present = User.query.filter_by(email=email).first()
     defaultLocationLat = float(0.0)
     defaultLocationLong = float(0.0)
-    automatedSOSOn = bool(request.args.get('automatedSOSOn'))
-    developerAccount = bool(request.args.get('developerAccount'))
-    anonymousDataSharingON = bool(request.args.get('anonymousDataSharingON'))
+    automatedSOSOn = bool(request.form['automatedSOSOn'])
+    developerAccount = bool(request.form['developerAccount'])
+    anonymousDataSharingON = bool(request.form['anonymousDataSharingON'])
     if present:
         response = {'Response': 'Error', 'Message': 'Already used email.'}
         jresponse = json.dumps(response)
         print(jresponse)
         return jresponse
+    if 'file' not in request.files:
+        response = {'Response': 'Error', 'Message': 'File not present in upload.'}
+        jresponse = json.dumps(response)
+        print(jresponse)
+        return jresponse
+    file = request.files['file']
+    if file.filename == '':
+        response = {'Response': 'Error', 'Message': 'No file name.'}
+        jresponse = json.dumps(response)
+        print(jresponse)
+        return jresponse
+    if file and allowed_file(file.filename):
+        filename = email + '.png'
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        response = 'The file has been saved.'
+        print(response)
     user = User(name=name, surname=surname, email=email,
                 userPhoneNumber=userPhoneNumber, birthday=birthday, sex=sex)
     user.set_password(password)
