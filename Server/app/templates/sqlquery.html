@@ -11,18 +11,20 @@
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
-        {% if tab =='aspetta la tua risposta'%}
-            <p>
-            {{ result }}
-            </p>
-        {% endif %}
+        <select action = "" method="post">
+            {% for colour in colours %}
+            <option value= "{{colour}}">{{ colour }}</option>"
+            {% endfor %}
+        </select>
         <p>{{ form.submit() }}</p>
     </form>
-    <select method="post">
-        {% for colour in colours %}
-        <option value= "{{colour}}">{{ colour }}</option>"
-        {% endfor %}
-    </select>
+
+    {% if tab =='aspetta la tua risposta'%}
+        <p>
+            {{ result }}
+        </p>
+    {% endif %}
+
     <style>
     table ,td{
         border:1px solid black;

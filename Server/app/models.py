@@ -1,6 +1,8 @@
-from app import db, login
+from app import db, login, app
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
 
 metadata = db.Model.metadata
 
@@ -26,6 +28,7 @@ class User(UserMixin, db.Model):
     birthday = db.Column(db.Date, nullable=False)
     userPhoneNumber = db.Column(db.String)
     sex = db.Column(db.String, nullable=False)
+    token = db.Column(db.String)
 
     #settings = db.relationship('UserSetting', backref='User', lazy='dynamic')
 
@@ -38,6 +41,22 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.passwordHash, password)
+
+    def generate_auth_token(self, expiration=600):
+        s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'id': self.id})
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return None # valid token, but expired
+        except BadSignature:
+            return None # invalid token
+        user = User.query.get(data['id'])
+        return user
 
 
 class BloodPressure(User):

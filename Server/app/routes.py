@@ -32,6 +32,9 @@ def login():
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
         print(user.email + ' just logged in!')
+        token = user.generate_auth_token()
+        user.token = token
+        db.session.commit()
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index')
@@ -53,7 +56,7 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(name=form.name.data, surname=form.surname.data, email=form.email.data,
-                    userPhoneNumber=form.phonenumber.data, birthday=form.birthday.data)
+                    userPhoneNumber=form.phonenumber.data, sex=form.sex.data, birthday=form.birthday.data)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -78,7 +81,6 @@ def sqlquery():
         for row in result:
             names.append(row)
         jresponse = json.dumps([(dict(row.items())) for row in result2])
-        print(jresponse)
     return render_template('sqlquery.html', title='My Develop', form=form , tab=names, jtext=jresponse, colours=colours)
 
 
@@ -143,6 +145,25 @@ def android_register():
     response = {'Response': 'Success', 'Message': 'The User has been correctly registered.', 'Code': '200'}
     jresponse = json.dumps(response)
     print(jresponse)
+    return jresponse
+
+
+@app.route('/android/login', methods=['GET', 'POST'])
+def android_login():
+    email = request.form['email']
+    password = request.form['password']
+    user = User.query.filter_by(email=email).first()
+    if user is None or not user.check_password(password):
+        response = {'Response': 'Error', 'Message': 'Incorrect Username or Password.', 'Code': '103'}
+        jresponse = json.dumps(response)
+        return jresponse
+    login_user(user)
+    token = user.generate_auth_token()
+    user.token = token
+    db.session.commit()
+    response = {'Response': 'Success', 'Message': 'The User has been correctly logged in.', 'Code': '201',
+                'Token': token.decode('ascii')}
+    jresponse = json.dumps(response)
     return jresponse
 
 
