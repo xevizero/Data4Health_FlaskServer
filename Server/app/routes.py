@@ -150,11 +150,13 @@ def android_register():
 
 @app.route('/android/login', methods=['GET', 'POST'])
 def android_login():
-    email = request.form['email']
-    password = request.form['password']
+    input_json = request.get_json(force=True)
+    email = input_json['email']
+    password = input_json['password']
     user = User.query.filter_by(email=email).first()
     if user is None or not user.check_password(password):
         response = {'Response': 'Error', 'Message': 'Incorrect Username or Password.', 'Code': '103'}
+        print(response)
         jresponse = json.dumps(response)
         return jresponse
     login_user(user)
@@ -163,6 +165,7 @@ def android_login():
     db.session.commit()
     response = {'Response': 'Success', 'Message': 'The User has been correctly logged in.', 'Code': '201',
                 'Token': token.decode('ascii')}
+    print(response)
     jresponse = json.dumps(response)
     return jresponse
 
