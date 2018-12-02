@@ -28,6 +28,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         print(user.token)
+        print(user.token.decode('ascii'))
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
@@ -162,7 +163,7 @@ def android_login():
         return jresponse
     login_user(user)
     token = user.generate_auth_token()
-    user.token = token
+    user.token = token.decode('ascii')
     db.session.commit()
     response = {'Response': 'Success', 'Message': 'The User has been correctly logged in.', 'Code': '201',
                 'Token': token.decode('ascii')}
@@ -189,14 +190,15 @@ def android_profile():
     input_json = request.get_json(force=True)
     token = input_json['Token']
     print(token)
-    user = User.query.filter_by(token=token).first()
-    print(user.token)
+    user = User.verify_auth_token(token)
     if user is None:
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
-    response = {'Name': user.name, 'Surname': user.surname, 'Birthday': user.birthday}
+    #data = {'Name'}
+    response = {'Response': 'Success', 'Message': 'Here''s the user info.', 'Code': '202', 'Data': data}
     jresponse = json.dumps(response)
+    print(jresponse)
     return jresponse
 
 
