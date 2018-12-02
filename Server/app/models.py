@@ -17,6 +17,13 @@ class EmergencyServicesAPI(db.Model):
     EmergencyServicePhoneNumber = db.Column(db.String)
 
 
+class EmergencyStats(db.Model):
+    __tablename__ = 'EmergencyStats'
+
+    statsId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    statTime = db.Column(db.Integer, nullable=False)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'User'
 

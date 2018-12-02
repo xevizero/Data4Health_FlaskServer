@@ -27,6 +27,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
+        print(user.token)
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
@@ -170,7 +171,36 @@ def android_login():
     return jresponse
 
 
-@app.route('/uploads/<filename>')
+@app.route('/android/homepage', methods=['GET', 'POST'])
+def android_homepage():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    user = User.query.filter_by(token=token).first()
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    return 'Tutto ok.'
+
+
+@app.route('/android/profile', methods=['GET', 'POST'])
+def android_profile():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    user = User.query.filter_by(token=token).first()
+    print(user.token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    response = {'Name': user.name, 'Surname': user.surname, 'Birthday': user.birthday}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+@app.route('/android/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
