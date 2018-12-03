@@ -226,14 +226,21 @@ def android_profile():
     data['Steps'] = todaySteps.stepsValue
     data['Heartbeat'] = int(heartbeat)
     response["Data"] = data
-
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
 
 
-@app.route('/android/uploads/<filename>')
-def uploaded_file(filename):
+@app.route('/android/uploads',  methods=['GET', 'POST'])
+def uploaded_file():
+    token = request.form['Token']
+    filename = request.form['Filename']
+    print(token)
+    user = User.verify_auth_token(token)
+    if user is None:
+        #response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        #jresponse = json.dumps(response)
+        return 404
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
 
