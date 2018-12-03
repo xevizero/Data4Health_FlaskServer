@@ -168,9 +168,10 @@ def android_login():
     user.token = token.decode('ascii')
 
     #FAKE HEALTH DATA!
-    dailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=50, stepsDate=datetime.datetime.now())
+    #dailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=50, stepsDate=datetime.datetime.now())
     heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=80, heartRateTimestamp=datetime.datetime.now())
-    db.session.add(dailySteps)
+    dailySteps = DailyStep.query.filter_by(dailyStepsId=user.get_id(), stepsDate=datetime.date.today()).first()
+    dailySteps.stepsValue = dailySteps.stepsValue + 20
     db.session.add(heartRate)
     db.session.commit()
     response = {'Response': 'Success', 'Message': 'The User has been correctly logged in.', 'Code': '201',
@@ -203,23 +204,27 @@ def android_profile():
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
-    midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0)
-    print(datetime.datetime.now())
-    print(midnight)
-    todaySteps = DailyStep.query.filter(DailyStep.dailyStepsId == user.get_id()).filter(DailyStep.stepsDate > midnight)\
-        .with_entities(func.avg(DailyStep.stepsValue).label('average')).first()
-    print(todaySteps)
-
+    midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.datetime.now()
+    pastPoint = now - datetime.timedelta(seconds=15)
+    #todaySteps = DailyStep.query.filter(DailyStep.dailyStepsId == user.get_id(), DailyStep.stepsDate > midnight)\
+    #    .with_entities(func.avg(DailyStep.stepsValue).label('average')).first()
+    todaySteps = DailyStep.query.filter_by(dailyStepsId=user.get_id(), stepsDate=datetime.date.today()).first()
+    heartbeat = db.session.query(func.avg(HeartRate.heartRateValue))\
+        .filter(HeartRate.heartRateUserId==user.get_id(),
+                HeartRate.heartRateTimestamp>midnight, HeartRate.heartRateTimestamp<pastPoint).scalar()
+    print(heartbeat)
     response = {}
     data = {}
     response['Response'] = 'Success'
-    response['Message'] = 'Here''s the user info.'
+    response['Message'] = "Here's the user info."
     response['Code'] = '202'
     data['Name'] = user.name
     data['Surname'] = user.surname
     data['Birthday'] = user.birthday.strftime('%Y-%m-%d')
     data['Sex'] = user.sex
     data['Steps'] = todaySteps.stepsValue
+    data['Heartbeat'] = int(heartbeat)
     response["Data"] = data
 
     jresponse = json.dumps(response)
