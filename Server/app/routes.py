@@ -1,11 +1,13 @@
 from flask import render_template, flash, redirect, url_for, request, send_from_directory
 from app import app, db, ALLOWED_EXTENSIONS
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
-from app.models import User, UserSetting
+from app.models import User, UserSetting, DailyStep, HeartRate
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
-import json, datetime, os
+from sqlalchemy.sql import func
+from datetime import date, timedelta
+import json, datetime, os, time
 
 
 def allowed_file(filename):
@@ -164,6 +166,12 @@ def android_login():
     login_user(user)
     token = user.generate_auth_token()
     user.token = token.decode('ascii')
+
+    #FAKE HEALTH DATA!
+    dailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=50, stepsDate=datetime.datetime.now())
+    heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=80, heartRateTimestamp=datetime.datetime.now())
+    db.session.add(dailySteps)
+    db.session.add(heartRate)
     db.session.commit()
     response = {'Response': 'Success', 'Message': 'The User has been correctly logged in.', 'Code': '201',
                 'Token': token.decode('ascii')}
@@ -195,8 +203,25 @@ def android_profile():
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
-    #data = {'Name'}
-    response = {'Response': 'Success', 'Message': 'Here''s the user info.', 'Code': '202', 'Data': data}
+    midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0)
+    print(datetime.datetime.now())
+    print(midnight)
+    todaySteps = DailyStep.query.filter(DailyStep.dailyStepsId == user.get_id()).filter(DailyStep.stepsDate > midnight)\
+        .with_entities(func.avg(DailyStep.stepsValue).label('average')).first()
+    print(todaySteps)
+
+    response = {}
+    data = {}
+    response['Response'] = 'Success'
+    response['Message'] = 'Here''s the user info.'
+    response['Code'] = '202'
+    data['Name'] = user.name
+    data['Surname'] = user.surname
+    data['Birthday'] = user.birthday.strftime('%Y-%m-%d')
+    data['Sex'] = user.sex
+    data['Steps'] = todaySteps.stepsValue
+    response["Data"] = data
+
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
@@ -206,8 +231,6 @@ def android_profile():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
-
-
 
 
 

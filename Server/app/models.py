@@ -17,11 +17,12 @@ class EmergencyServicesAPI(db.Model):
     EmergencyServicePhoneNumber = db.Column(db.String)
 
 
-class EmergencyStats(db.Model):
+class EmergencyEvents(db.Model):
     __tablename__ = 'EmergencyStats'
 
-    statsId = db.Column(db.ForeignKey('User.id'), primary_key=True)
-    statTime = db.Column(db.Integer, nullable=False)
+    eventId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    eventTime = db.Column(db.Integer, nullable=False)
+    eventDesc = db.Column(db.String)
 
 
 class User(UserMixin, db.Model):
@@ -84,20 +85,27 @@ class Caretaker(User):
     requestStatusCode = db.Column(db.Integer, nullable=False)
 
 
-class DailyStep(User):
+class DailyStep(db.Model):
     __tablename__ = 'DailyStep'
 
-    dailyStepsId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    dailyStepsId = db.Column(db.Integer,
+                             #db.ForeignKey('User.id'),
+                             primary_key=True)
     stepsValue = db.Column(db.Integer, nullable=False)
-    stepsDate = db.Column(db.Date, nullable=False)
+    stepsDate = db.Column(db.Date, nullable=False, primary_key=True)
+
+    def __repr__(self):
+        return '<StepData {}>'.format(self.stepsValue)
 
 
-class HeartRate(User):
+class HeartRate(db.Model):
     __tablename__ = 'HeartRate'
 
-    heartRateUserId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    heartRateUserId = db.Column(db.Integer,
+                                #db.ForeignKey('User.id'),
+                                primary_key=True)
     heartRateValue = db.Column(db.Integer, nullable=False)
-    heartRateTimestamp = db.Column(db.DateTime, nullable=False)
+    heartRateTimestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
 
 
 class UserSetting(db.Model):
