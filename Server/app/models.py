@@ -76,12 +76,17 @@ class BloodPressure(User):
     bloodPressureTimestamp = db.Column(db.DateTime, nullable=False)
 
 
-class Caretaker(User):
+class Caretaker(db.Model):
     __tablename__ = 'Caretaker'
 
-    caretakerId = db.Column(db.ForeignKey('User.id'), primary_key=True)
-    observedUserId = db.Column(db.Integer, nullable=False)
+    caretakerId = db.Column(db.Integer,
+                            #db.ForeignKey('User.id'),
+                            primary_key=True)
+    observedUserId = db.Column(db.Integer, nullable=False, primary_key=True)
     subscription = db.Column(db.Boolean, nullable=False)
+    # 0 rifiutata
+    # 1 accettata
+    # 2 in corso
     requestStatusCode = db.Column(db.Integer, nullable=False)
 
 

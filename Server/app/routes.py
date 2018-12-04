@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, send_from_directory
 from app import app, db, ALLOWED_EXTENSIONS
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
-from app.models import User, UserSetting, DailyStep, HeartRate
+from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
@@ -170,11 +170,11 @@ def android_login():
 
     #FAKE HEALTH DATA!
     #dailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=50, stepsDate=datetime.datetime.now())
-    heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=80, heartRateTimestamp=datetime.datetime.now())
-    dailySteps = DailyStep.query.filter_by(dailyStepsId=user.get_id(), stepsDate=datetime.date.today()).first()
-    dailySteps.stepsValue = dailySteps.stepsValue + 20
-    db.session.add(heartRate)
-    db.session.commit()
+    #heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=80, heartRateTimestamp=datetime.datetime.now())
+    #dailySteps = DailyStep.query.filter_by(dailyStepsId=user.get_id(), stepsDate=datetime.date.today()).first()
+    #dailySteps.stepsValue = dailySteps.stepsValue + 20
+    #db.session.add(heartRate)
+    #db.session.commit()
     response = {'Response': 'Success', 'Message': 'The User has been correctly logged in.', 'Code': '201',
                 'Token': token.decode('ascii')}
     print(response)
@@ -224,8 +224,75 @@ def android_profile():
     data['Surname'] = user.surname
     data['Birthday'] = user.birthday.strftime('%Y-%m-%d')
     data['Sex'] = user.sex
-    data['Steps'] = todaySteps.stepsValue
-    data['Heartbeat'] = int(heartbeat)
+    if todaySteps is None:
+        data['Steps'] = 0
+    else:
+        data['Steps'] = todaySteps.stepsValue
+    if heartbeat is None:
+        data['Heartbeat'] = "No measurements"
+    else:
+        data['Heartbeat'] = int(heartbeat)
+    response["Data"] = data
+    jresponse = json.dumps(response)
+    print(jresponse)
+    return jresponse
+
+
+@app.route('/android/external_profile', methods=['GET', 'POST'])
+def android_external_profile():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    ext_email = input_json['Email']
+    ext_user = User.query.filter_by(email=ext_email).first()
+    if ext_user is None:
+        response = {'Response': 'Error', 'Message': 'The searched User does not exist.', 'Code': '105'}
+        jresponse = json.dumps(response)
+        return jresponse
+    midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.datetime.now()
+    pastPoint = now - datetime.timedelta(seconds=15)
+    caretaking = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    todaySteps = DailyStep.query.filter_by(dailyStepsId=ext_user.get_id(), stepsDate=datetime.date.today()).first()
+    heartbeat = db.session.query(func.avg(HeartRate.heartRateValue))\
+        .filter(HeartRate.heartRateUserId==ext_user.get_id(),
+                HeartRate.heartRateTimestamp>midnight, HeartRate.heartRateTimestamp<pastPoint).scalar()
+    response = {}
+    data = {}
+    response['Response'] = 'Success'
+    response['Message'] = "Here's the user info."
+    response['Code'] = '202'
+    data['Name'] = ext_user.name
+    data['Surname'] = ext_user.surname
+    data['Birthday'] = ext_user.birthday.strftime('%Y-%m-%d')
+    data['Sex'] = ext_user.sex
+    if caretaking is None:
+        data['Subscription'] = False
+        data['StatusCode'] = 0
+        data['Steps'] = 0
+        data['Heartbeat'] = "No measurements"
+    else:
+        if caretaking.requestStatusCode is (0 or 2):
+            data['Subscription'] = False
+            data['StatusCode'] = caretaking.requestStatusCode
+            data['Steps'] = 0
+            data['Heartbeat'] = "No measurements"
+        else:
+            data['Subscription'] = caretaking.subscription
+            data['StatusCode'] = caretaking.requestStatusCode
+            if todaySteps is None:
+                data['Steps'] = 0
+            else:
+                data['Steps'] = todaySteps.stepsValue
+            if heartbeat is None:
+                data['Heartbeat'] = "No measurements"
+            else:
+                data['Heartbeat'] = int(heartbeat)
     response["Data"] = data
     jresponse = json.dumps(response)
     print(jresponse)
@@ -270,6 +337,7 @@ def android_research():
     response['Data'] = data
     jresponse = json.dumps(response)
     print(jresponse)
+    return jresponse
 
 
 
