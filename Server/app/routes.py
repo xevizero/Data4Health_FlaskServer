@@ -6,6 +6,7 @@ from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from sqlalchemy.sql import func
+from sqlalchemy import or_
 from datetime import date, timedelta
 import json, datetime, os, time
 
@@ -233,17 +234,42 @@ def android_profile():
 
 @app.route('/android/uploads',  methods=['GET', 'POST'])
 def uploaded_file():
-    token = request.form['Token']
-    filename = request.form['Filename']
+    token = request.args.get('Token')
+    filename = request.args.get('Filename')
     print(token)
     user = User.verify_auth_token(token)
     if user is None:
         #response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         #jresponse = json.dumps(response)
         return 404
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+
+@app.route('/android/research', methods=['GET', 'POST'])
+def android_research():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    text = input_json['Text']
+    result = User.query.filter(or_(User.name.contains(text), User.surname.contains(text))).all()
+    response = {}
+    response['Response'] = 'Success'
+    response['Message'] = "Here's the result."
+    data = []
+    for elem in result:
+        user = {}
+        user['Name'] = elem.name
+        user['Surname'] = elem.surname
+        user['Email'] = elem.email
+        data.append(user)
+    response['Data'] = data
+    jresponse = json.dumps(response)
+    print(jresponse)
 
 
 
