@@ -338,6 +338,81 @@ def android_research():
     return jresponse
 
 
+@app.route('/android/friend_request', methods=['GET', 'POST'])
+def friend_request():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    ext_email = input_json['Email']
+    ext_user = User.query.filter_by(email=ext_email).first()
+    if ext_user is None:
+        response = {'Response': 'Error', 'Message': 'The searched User does not exist.', 'Code': '105'}
+        jresponse = json.dumps(response)
+        return jresponse
+    caretaking = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    if caretaking is None:
+        caretaking = Caretaker(caretakerId=user.get_id(), observedUserId=ext_user.get_id(),
+                               subscription=0, requestStatusCode=2)
+        db.session.add(caretaking)
+        db.session.commit()
+    else:
+        if caretaking.requestStatusCode == 0:
+            caretaking.subscription = 0
+            caretaking.requestStatusCode = 2
+            db.session.commit()
+        else:
+            response = {'Response': 'Error', 'Message': 'Request already sent', 'Code': '106'}
+            jresponse = json.dumps(response)
+            return jresponse
+
+    response = {'Response': 'Success', 'Message': 'Friend request sent', 'Code': '204'}
+
+    jresponse = json.dumps(response)
+    print(jresponse)
+    return jresponse
+
+
+@app.route('/android/subscription_request', methods=['GET', 'POST'])
+def subscription_request():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    ext_email = input_json['Email']
+    subscription_query = input_json['Query']
+    ext_user = User.query.filter_by(email=ext_email).first()
+    if ext_user is None:
+        response = {'Response': 'Error', 'Message': 'The searched User does not exist.', 'Code': '105'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    caretaking = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    if caretaking is None:
+        response = {'Response': 'Error', 'Message': 'This person is not in your friends list.', 'Code': '107'}
+        jresponse = json.dumps(response)
+        return jresponse
+    else:
+        if caretaking.requestStatusCode == 1:
+            caretaking.subscription = subscription_query
+            db.session.commit()
+        else:
+            response = {'Response': 'Error', 'Message': 'This person is not in your friends list.', 'Code': '107'}
+            jresponse = json.dumps(response)
+            return jresponse
+
+    response = {'Response': 'Success', 'Message': 'Subscription modified', 'Code': '205', 'Data': subscription_query}
+
+    jresponse = json.dumps(response)
+    print(jresponse)
+    return jresponse
+
 
 
 
