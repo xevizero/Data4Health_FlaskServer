@@ -30,16 +30,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        print(user.token)
-        print(user.token.decode('ascii'))
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
+        token = user.generate_auth_token()
+        user.token = token.decode('ascii')
+        db.session.commit()
         login_user(user, remember=form.remember_me.data)
         print(user.email + ' just logged in!')
-        token = user.generate_auth_token()
-        user.token = token
-        db.session.commit()
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index')
@@ -164,10 +162,10 @@ def android_login():
         print(response)
         jresponse = json.dumps(response)
         return jresponse
-    login_user(user)
     token = user.generate_auth_token()
     user.token = token.decode('ascii')
-
+    db.session.commit()
+    login_user(user)
     #FAKE HEALTH DATA!
     #dailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=50, stepsDate=datetime.datetime.now())
     #heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=80, heartRateTimestamp=datetime.datetime.now())
