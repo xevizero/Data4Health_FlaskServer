@@ -189,8 +189,21 @@ def android_homepage():
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
-
-    return 'Tutto ok.'
+    friends = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=2).all()
+    data = []
+    for friend in friends:
+        qr = User.query.filter_by(id=friend.observedUserId).first()
+        elem = {}
+        elem['Email'] = qr.email
+        data.append(elem)
+    response = {}
+    response['Response'] = 'Success'
+    response['Message'] = "Here're the users' mails."
+    response['Name'] = user.name
+    response['Surname'] = user.surname
+    response['Data'] = data
+    jresponse = json.dumps(response)
+    return jresponse
 
 
 @app.route('/android/profile', methods=['GET', 'POST'])
@@ -368,9 +381,7 @@ def friend_request():
             response = {'Response': 'Error', 'Message': 'Request already sent', 'Code': '106'}
             jresponse = json.dumps(response)
             return jresponse
-
     response = {'Response': 'Success', 'Message': 'Friend request sent', 'Code': '204'}
-
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
@@ -392,7 +403,6 @@ def subscription_request():
         response = {'Response': 'Error', 'Message': 'The searched User does not exist.', 'Code': '105'}
         jresponse = json.dumps(response)
         return jresponse
-
     caretaking = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
     if caretaking is None:
         response = {'Response': 'Error', 'Message': 'This person is not in your friends list.', 'Code': '107'}
@@ -406,9 +416,7 @@ def subscription_request():
             response = {'Response': 'Error', 'Message': 'This person is not in your friends list.', 'Code': '107'}
             jresponse = json.dumps(response)
             return jresponse
-
     response = {'Response': 'Success', 'Message': 'Subscription modified', 'Code': '205', 'Data': subscription_query}
-
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
