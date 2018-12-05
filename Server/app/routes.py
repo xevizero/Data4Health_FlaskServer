@@ -184,12 +184,12 @@ def android_login():
 def android_homepage():
     input_json = request.get_json(force=True)
     token = input_json['Token']
-    user = User.query.filter_by(token=token).first()
+    user = User.verify_auth_token(token)
     if user is None:
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
-    friends = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=2).all()
+    friends = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=1).all()
     data = []
     for friend in friends:
         qr = User.query.filter_by(id=friend.observedUserId).first()
@@ -202,7 +202,9 @@ def android_homepage():
     response['Name'] = user.name
     response['Surname'] = user.surname
     response['Data'] = data
+    response['Code'] = '206'
     jresponse = json.dumps(response)
+    print(jresponse)
     return jresponse
 
 
@@ -277,7 +279,7 @@ def android_external_profile():
     data = {}
     response['Response'] = 'Success'
     response['Message'] = "Here's the user info."
-    response['Code'] = '202'
+    response['Code'] = '203'
     data['Name'] = ext_user.name
     data['Surname'] = ext_user.surname
     data['Birthday'] = ext_user.birthday.strftime('%Y-%m-%d')
@@ -346,6 +348,7 @@ def android_research():
         user['Email'] = elem.email
         data.append(user)
     response['Data'] = data
+    response['Code'] = '208'
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
@@ -422,7 +425,52 @@ def subscription_request():
     return jresponse
 
 
+@app.route('/android/notifications', methods=['GET', 'POST'])
+def android_notifications():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    requests = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=2).all()
+    data = []
+    for req in requests:
+        qr = User.query.filter_by(id=req.observedUserId).first()
+        elem = {}
+        elem['Email'] = qr.email
+        elem['Surname'] = qr.surname
+        elem['Name'] = qr.name
+        data.append(elem)
+    response = {}
+    response['Data'] = data
+    response['Response'] = 'Success'
+    response['Code'] = '207'
+    jresponse = json.dumps(response)
+    return jresponse
 
+
+@app.route('/android/clear_all', methods=['GET', 'POST'])
+def android_clear_all():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    emails = input_json['Email']
+    number = 0
+    for email in emails:
+        number = number + 1
+        user = User.query.filter_by(email=email).first()
+        caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=user.get_id()).first()
+        caretake.requestStatusCode = 0
+        db.session.commit()
+    response = {'Response': 'Success', 'Code': '209', 'Message': "Cleared users' notifications.", 'Number': number}
+    jresponse = json.dumps(response)
+    return jresponse
 
 
 #deprecated but useful defs
