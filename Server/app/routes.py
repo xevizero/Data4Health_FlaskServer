@@ -20,7 +20,10 @@ def allowed_file(filename):
 @app.route('/index')
 @login_required
 def index():
-    return render_template("index.html", title='Home Page')
+    usersettings = UserSetting.query.filter_by(userId=current_user.id).first()
+    developer = usersettings.developerAccount
+
+    return render_template("index.html", title='Home Page', developer=developer, name=current_user.name)
 
 
 @app.route('/login', methods=['GET', 'POST'])

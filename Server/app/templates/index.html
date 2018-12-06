@@ -1,6 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Hi, {{ current_user.Name }}!</h1>
-    <h2> chiedimi qualcosa   <a href="{{ url_for('sqlquery') }}">Home</a></h2>
+    <div style="display: flex; justify-content: center; align-items: center">
+    <div style="margin-left: 100px; width: 10%;"><br></div>
+        <div style="margin-left: 100px; width: 80%;">
+            {%  if developer %}
+    <h1> Welcome developer!</h1>
+                <h3>This is your personal dashboard that allows you to access the Data4Help API.</h3>
+            {%  else %}
+                <h1> Welcome {{ name }}!</h1>
+                <h3>You do not have access to developer privileges, so you can't access the Data4Help API at this time.</h3>
+                <h3>You can obtain developer privileges by contacting our Customer Service.</h3>
+                <h3>You can still access all of Data4Health services by downloading the Data4Health Android app.</h3>
+        {%  endif %}
+        </div>
+    <div style="margin-left: 100px; width: 10%;"><br></div>
+    </div>
+
+
+
 {% endblock %}

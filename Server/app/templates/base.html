@@ -1,28 +1,41 @@
 <html>
     <head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
         {% if title %}
-        <title>{{ title }} - testserver</title>
+        <title>{{ title }} - Data4Health</title>
         {% else %}
-        <title>testserver</title>
+        <title>Data4Health</title>
         {% endif %}
     </head>
     <body>
-          <div>
-            TestServer:
-            <a href="{{ url_for('index') }}">Home</a>
+    <div style="display: flex">
+        <div align="left"  style="margin-left: 100px; width: 25%; display: flex; justify-content: center; align-items: center">
+            <img src="{{ url_for('static', filename='images/ic_icon.png') }}" width="120px" height="120px"/>
+        </div>
+    <div   style="width: 50%; display: flex; justify-content: center; align-items: center">
+        <h1>Data4Health</h1>
+        </div>
+          <div style="margin-right: 100px; width: 25%; display: flex; justify-content: center; align-items: center">
+
+            <a href="{{ url_for('index') }}" style="margin: 10px" >Home</a>
             {% if current_user.is_anonymous %}
-            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('login') }}" style="margin: 10px">Login</a>
             {% else %}
-                <a href="{{ url_for('sqlquery') }}">Sqlquery</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
+                <!--remove sqlquery when testing done -->
+                {%  if developer %}
+                <a href="{{ url_for('sqlquery') }}" style="margin: 10px">Sqlquery</a>
+                    {% endif %}
+                <a href="{{ url_for('logout') }}" style="margin: 10px">Logout</a>
             {% endif %}
           </div>
+    </div>
         <hr>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-        <ul>
+        <ul align="left" style="margin-left: 150px">
             {% for message in messages %}
-            <li>{{ message }}</li>
+            <h4>{{ message }}</h4>
             {% endfor %}
         </ul>
         {% endif %}
