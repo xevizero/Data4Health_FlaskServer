@@ -435,37 +435,64 @@ def android_notifications():
         jresponse = json.dumps(response)
         return jresponse
     requests = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=2).all()
-    data = []
+    response = {}
+    data = {}
+    reqs =[]
     for req in requests:
         qr = User.query.filter_by(id=req.observedUserId).first()
         elem = {}
         elem['Email'] = qr.email
         elem['Surname'] = qr.surname
         elem['Name'] = qr.name
-        data.append(elem)
-    response = {}
+        reqs.append(elem)
+    data['Requests'] = reqs
     response['Data'] = data
     response['Response'] = 'Success'
     response['Code'] = '207'
     jresponse = json.dumps(response)
+    print(jresponse)
     return jresponse
 
 
-@app.route('/android/clear_all', methods=['GET', 'POST'])
+@app.route('/android/notifications_request_answer', methods=['GET', 'POST'])
+def notifications_request_answer():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    email = input_json['Email']
+    answer = input_json['Answer']
+    ext_user = User.query.filter_by(email=email).first()
+    caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    caretake.requestStatusCode = answer
+    db.session.commit()
+
+    response = {'Response': 'Success', 'Code': '209', 'Message': "Answer submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+@app.route('/android/notifications_clear_all', methods=['GET', 'POST'])
 def android_clear_all():
     input_json = request.get_json(force=True)
     token = input_json['Token']
+    print(token)
     user = User.verify_auth_token(token)
     if user is None:
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
     emails = input_json['Email']
+    print(emails)
     number = 0
     for email in emails:
         number = number + 1
-        user = User.query.filter_by(email=email).first()
-        caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=user.get_id()).first()
+        ext_user = User.query.filter_by(email=email).first()
+        caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
         caretake.requestStatusCode = 0
         db.session.commit()
     response = {'Response': 'Success', 'Code': '209', 'Message': "Cleared users' notifications.", 'Number': number}
