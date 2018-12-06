@@ -473,7 +473,7 @@ def android_notifications():
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
-    requests = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=2).all()
+    requests = Caretaker.query.filter_by(observedUserId=user.get_id(), requestStatusCode=2).all()
     response = {}
     data = {}
     reqs =[]
