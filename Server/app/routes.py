@@ -6,7 +6,7 @@ from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from sqlalchemy.sql import func
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from datetime import date, timedelta
 import json, datetime, os, time
 
@@ -336,7 +336,8 @@ def android_research():
         jresponse = json.dumps(response)
         return jresponse
     text = input_json['Text']
-    result = User.query.filter(or_(User.name.contains(text), User.surname.contains(text))).all()
+    result = User.query.filter(and_(or_(User.name.contains(text), User.surname.contains(text))),
+                               (User.id != user.get_id())).all()
     response = {}
     response['Response'] = 'Success'
     response['Message'] = "Here's the result."
@@ -349,6 +350,41 @@ def android_research():
         data.append(user)
     response['Data'] = data
     response['Code'] = '208'
+    jresponse = json.dumps(response)
+    print(jresponse)
+    return jresponse
+
+
+@app.route('/android/remove_friend_request', methods=['GET', 'POST'])
+def remove_friend_request():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    ext_email = input_json['Email']
+    ext_user = User.query.filter_by(email=ext_email).first()
+    if ext_user is None:
+        response = {'Response': 'Error', 'Message': 'The searched User does not exist.', 'Code': '105'}
+        jresponse = json.dumps(response)
+        return jresponse
+    caretaking = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    if caretaking is None:
+        response = {'Response': 'Error', 'Message': 'This user already isn''t in your friends list.', 'Code': '109'}
+        jresponse = json.dumps(response)
+        return jresponse
+    else:
+        if caretaking.requestStatusCode == 1 or caretaking.requestStatusCode == 2:
+            caretaking.subscription = 0
+            caretaking.requestStatusCode = 0
+            db.session.commit()
+        else:
+            response = {'Response': 'Error', 'Message': 'This user already isn''t in your friends list', 'Code': '109'}
+            jresponse = json.dumps(response)
+            return jresponse
+    response = {'Response': 'Success', 'Message': 'Friend removed', 'Code': '204'}
     jresponse = json.dumps(response)
     print(jresponse)
     return jresponse
