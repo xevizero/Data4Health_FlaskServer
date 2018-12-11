@@ -1,5 +1,5 @@
 from flask import render_template, flash, redirect, url_for, request, send_from_directory
-from app import app, db, ALLOWED_EXTENSIONS
+from app import app, db, ALLOWED_EXTENSIONS, UPLOAD_FOLDER, PROJECT_HOME
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
 from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker
 from flask_login import logout_user, login_required, current_user, login_user
@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy.sql import func
 from sqlalchemy import or_, and_
 from datetime import date, timedelta
+from shutil import copy2
 import json, datetime, os, time
 
 
@@ -21,7 +22,10 @@ def allowed_file(filename):
 @login_required
 def index():
     usersettings = UserSetting.query.filter_by(userId=current_user.id).first()
-    developer = usersettings.developerAccount
+    if usersettings is None:
+        developer = False
+    else:
+        developer = usersettings.developerAccount
 
     return render_template("index.html", title='Home Page', developer=developer, name=current_user.name)
 
@@ -66,6 +70,13 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
+        userSetting = UserSetting(userId=user.get_id(), defaultLocationLat=0,
+                                  defaultLocationLong=0, automatedSOSOn=1,
+                                  developerAccount=1, anonymousDataSharingON=1)
+        db.session.add(userSetting)
+        db.session.commit()
+        copy2('{}/user.png'.format(PROJECT_HOME), UPLOAD_FOLDER)
+        os.rename('{}user.png'.format(UPLOAD_FOLDER), UPLOAD_FOLDER + '{}.png'.format(user.email))
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
@@ -478,7 +489,7 @@ def android_notifications():
     data = {}
     reqs =[]
     for req in requests:
-        qr = User.query.filter_by(id=req.observedUserId).first()
+        qr = User.query.filter_by(id=req.caretakerId).first()
         elem = {}
         elem['Email'] = qr.email
         elem['Surname'] = qr.surname
