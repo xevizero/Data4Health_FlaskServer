@@ -515,6 +515,35 @@ def notifications_request_answer():
     return jresponse
 
 
+@app.route('/android/sync_health_data', methods=['GET', 'POST'])
+def sync_health_data():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    steps = input_json['Steps']
+    heartrate = input_json['Heartrate']
+
+    heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=heartrate,
+                          heartRateTimestamp=datetime.datetime.now())
+    dailySteps = DailyStep.query.filter_by(dailyStepsId=user.get_id(), stepsDate=datetime.date.today()).first()
+    if dailySteps is None:
+        newDailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=steps, stepsDate=datetime.date.today())
+        db.session.add(newDailySteps)
+    else:
+        dailySteps.stepsValue = steps
+    db.session.add(heartRate)
+    db.session.commit()
+
+    response = {'Response': 'Success', 'Code': '210', 'Message': "Data submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
 @app.route('/android/notifications_clear_all', methods=['GET', 'POST'])
 def android_clear_all():
     input_json = request.get_json(force=True)
