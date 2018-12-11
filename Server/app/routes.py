@@ -478,7 +478,7 @@ def android_notifications():
     data = {}
     reqs =[]
     for req in requests:
-        qr = User.query.filter_by(id=req.observedUserId).first()
+        qr = User.query.filter_by(id=req.caretakerId).first()
         elem = {}
         elem['Email'] = qr.email
         elem['Surname'] = qr.surname
