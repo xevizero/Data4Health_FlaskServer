@@ -1,0 +1,161 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+        {% if title %}
+        <title>{{ title }} - Data4Health</title>
+        {% else %}
+        <title>Data4Health</title>
+        {% endif %}
+
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 10px;
+        left: 25%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 5px;
+        left: 50%;
+        margin-left: -180px;
+        width: 350px;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+      }
+      #latlng {
+        width: 225px;
+      }
+    </style>
+
+
+
+    </head>
+    <body>
+    <div style="display: flex">
+        <div align="left"  style="margin-left: 100px; width: 25%; display: flex; justify-content: center; align-items: center">
+            <img src="{{ url_for('static', filename='images/ic_icon.png') }}" width="120px" height="120px"/>
+        </div>
+    <div   style="width: 50%; display: flex; justify-content: center; align-items: center">
+        <h1>Data4Health</h1>
+        </div>
+          <div style="margin-right: 100px; width: 25%; display: flex; justify-content: center; align-items: center">
+
+            <a href="{{ url_for('index') }}" style="margin: 10px" >Website</a>
+
+          </div>
+    </div>
+        <hr>
+
+
+{% block content %}
+    <div style="display: flex; justify-content: center; align-items: center">
+    <div style="margin-left: 100px; width: 10%;"><br></div>
+        <div style="margin-left: 100px; width: 80%;">
+            <h2 align="center">AutomatedSOS Personnel Panel</h2>
+            {% if requests %}
+                {% for req in requests%}
+                    <div align="center">
+                    <hr>
+                        <h3>Request #{{ req.eventId }}</h3>
+                        <h4>Event time: {{ req.eventTime }}</h4>
+                        <h4>Emergency description: {{ req.eventDesc }}</h4>
+                        <h4>Emergency latitude: {{ req.eventLat }}</h4>
+                        <h4>Emergency longitude: {{ req.eventLong }}</h4>
+                        <h4 onclick="javascript:setTimeout(getAddress, 10, {{ req.eventLat }}, {{ req.eventLong }}, 'addr{{ req.eventId }}')" id="addr{{ req.eventId }}"><b>Click here to see address</b></h4>
+                        <h4>Call this phone number: {{ req.eventPhoneNumber }}</h4>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <h3 align="center">No requests at this time.</h3>
+            {% endif %}
+
+        </div>
+    <div style="margin-left: 100px; width: 10%;"><br></div>
+    </div>
+    <script type="text/javascript">
+
+    function getAddress(lat, long, id){
+        var geocoder = new google.maps.Geocoder;
+        var latlng = {lat: 40.714224, lng: -73.961452};
+        geocoder.geocode({'location': latlng}, function(results, status) {
+
+            if (status === 'OK') {
+            if (results[0]) {
+              document.getElementById(id).innerHTML = 'Event address: '+results[0].formatted_address;
+            } else {
+              alert('No results found');
+            }
+          } else {
+            //alert('Geocoder failed due to: ' + status);
+          }
+        });
+    }
+    </script>
+    <script>
+/*
+      function initMap(lat, long) {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 8,
+          center: {lat: 40.731, lng: -73.997}
+        });
+        var geocoder = new google.maps.Geocoder;
+        var infowindow = new google.maps.InfoWindow;
+
+        document.getElementById('submit').addEventListener('click', function() {
+          geocodeLatLng(geocoder, map, infowindow);
+        });
+      }
+
+      function geocodeLatLng(geocoder, map, infowindow) {
+        var input = document.getElementById('latlng').value;
+        var latlngStr = input.split(',', 2);
+        var latlng = {lat: parseFloat(latlngStr[0]), lng: parseFloat(latlngStr[1])};
+        geocoder.geocode({'location': latlng}, function(results, status) {
+          if (status === 'OK') {
+            if (results[0]) {
+              map.setZoom(11);
+              var marker = new google.maps.Marker({
+                position: latlng,
+                map: map
+              });
+              infowindow.setContent(results[0].formatted_address);
+              infowindow.open(map, marker);
+            } else {
+              window.alert('No results found');
+            }
+          } else {
+            window.alert('Geocoder failed due to: ' + status);
+          }
+        });
+      }*/
+    </script>
+
+    <script async defer
+         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRrdh45NF3yD9DuOWj3k0yDWBfYj1-FW8&callback=getAddress">
+    </script>
+    </body>
+</html>
+
+{% endblock %}

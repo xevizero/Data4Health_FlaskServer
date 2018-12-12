@@ -641,7 +641,7 @@ def emergency_automatedsos():
         jresponse = json.dumps(response)
         return jresponse
 
-    emergencyrequest = EmergencyRequestsCallCenter(eventTime=datetime.datetime.now(), eventDesc= type,
+    emergencyrequest = EmergencyRequestsCallCenter(eventTime=datetime.datetime.now(), eventDesc=type,
                                                    eventUserId=user.get_id(), eventLat=latitude,
                                                    eventLong=longitude,
                                                    eventPhoneNumber=service.EmergencyServicePhoneNumber)
@@ -685,11 +685,13 @@ def uploads():
     return jresponse
 
 
-@app.route('/customer_service/call_center_panel', methods=['POST'])
-def my_test_endpoint():
-    input_json = request.get_json(force=True)
-    # force=True, above, is necessary if another developer
-    # forgot to set the MIME type to 'application/json'
-    print('data from client:', input_json)
+@app.route('/customer_service/requests')
+def getRequests():
+    requests = EmergencyRequestsCallCenter.query.all()
+    return requests
 
-    return render_template("index.html", title='Home Page', developer=0, name=current_user.name)
+
+@app.route('/customer_service/call_center_panel')
+def call_center_panel():
+
+    return render_template("call_center.html", title='Personnel panel', requests=getRequests())
