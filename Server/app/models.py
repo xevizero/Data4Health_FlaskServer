@@ -25,6 +25,18 @@ class EmergencyEvents(db.Model):
     eventDesc = db.Column(db.String)
 
 
+class EmergencyRequestsCallCenter(db.Model):
+    __tablename__ = 'EmergencyRequestsCallCenter'
+
+    eventId = db.Column(db.Integer, primary_key=True)
+    eventTime = db.Column(db.Integer, nullable=False)
+    eventDesc = db.Column(db.String)
+    eventUserId = db.Column(db.Integer)
+    eventLat = db.Column(db.Float)
+    eventLong = db.Column(db.Float)
+    eventPhoneNumber = db.Column(db.String)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'User'
 

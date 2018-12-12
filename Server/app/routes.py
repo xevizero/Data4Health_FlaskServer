@@ -1,7 +1,7 @@
-from flask import render_template, flash, redirect, url_for, request, send_from_directory
+from flask import render_template, flash, redirect, url_for, request, send_from_directory, jsonify
 from app import app, db, ALLOWED_EXTENSIONS, UPLOAD_FOLDER, PROJECT_HOME
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
-from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker
+from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker, EmergencyServicesAPI, EmergencyRequestsCallCenter, EmergencyEvents
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
@@ -203,6 +203,12 @@ def android_homepage():
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
+    userSettings = UserSetting.query.filter_by(userId=user.get_id()).first()
+    if userSettings is None:
+        response = {'Response': 'Error', 'Message': 'No settings found for this user.', 'Code': '110'}
+        jresponse = json.dumps(response)
+        return jresponse
+
     friends = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=1).all()
     data = []
     for friend in friends:
@@ -216,6 +222,7 @@ def android_homepage():
     response['Name'] = user.name
     response['Surname'] = user.surname
     response['Data'] = data
+    response['AutomatedSOSOn'] = userSettings.automatedSOSOn
     response['Code'] = '206'
     jresponse = json.dumps(response)
     print(jresponse)
@@ -579,6 +586,78 @@ def android_clear_all():
     return jresponse
 
 
+@app.route('/android/manage_automatedsos', methods=['GET', 'POST'])
+def manage_automatedsos():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    setting = input_json['AutomatedSOS']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    userSettings = UserSetting.query.filter_by(userId=user.get_id()).first()
+    if userSettings is None:
+        response = {'Response': 'Error', 'Message': 'No settings found for this user.', 'Code': '110'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    userSettings.automatedSOSOn = setting
+    db.session.commit()
+
+    response = {'Response': 'Success', 'Code': '210', 'Message': "Data submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+@app.route('/android/emergency_automatedsos', methods=['GET', 'POST'])
+def emergency_automatedsos():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    type = input_json['Type']
+    accurate = input_json['Accurate']
+    latitude = input_json['Latitude']
+    longitude = input_json['Longitude']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    if not accurate:
+        userSettings = UserSetting.query.filter_by(userId=user.get_id()).first()
+        if userSettings is None:
+            response = {'Response': 'Error', 'Message': 'No settings found for this user.', 'Code': '110'}
+            jresponse = json.dumps(response)
+            return jresponse
+        latitude = userSettings.defaultLocationLat
+        longitude = userSettings.defaultLocationLong
+
+    service = choose_service_from_location(latitude, longitude)
+    if service is None:
+        response = {'Response': 'Error', 'Message': 'No emergency service available for this area.', 'Code': '130'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    emergencyrequest = EmergencyRequestsCallCenter(eventTime=datetime.datetime.now(), eventDesc= type,
+                                                   eventUserId=user.get_id(), eventLat=latitude,
+                                                   eventLong=longitude,
+                                                   eventPhoneNumber=service.EmergencyServicePhoneNumber)
+    db.session.add(emergencyrequest)
+    db.session.commit()
+    response = {'Response': 'Success', 'Code': '220', 'Message': "Data submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+# This function fakes the calculation of the real service to call
+def choose_service_from_location(latitude, longitude):
+    service = EmergencyServicesAPI.query.first()
+    return service
+
+
 #deprecated but useful defs
 @app.route('/uploads', methods=['GET', 'POST'])
 def uploads():
@@ -606,3 +685,11 @@ def uploads():
     return jresponse
 
 
+@app.route('/customer_service/call_center_panel', methods=['POST'])
+def my_test_endpoint():
+    input_json = request.get_json(force=True)
+    # force=True, above, is necessary if another developer
+    # forgot to set the MIME type to 'application/json'
+    print('data from client:', input_json)
+
+    return render_template("index.html", title='Home Page', developer=0, name=current_user.name)
