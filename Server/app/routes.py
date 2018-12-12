@@ -517,7 +517,7 @@ def notifications_request_answer():
     email = input_json['Email']
     answer = input_json['Answer']
     ext_user = User.query.filter_by(email=email).first()
-    caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    caretake = Caretaker.query.filter_by(caretakerId=ext_user.get_id(), observedUserId=user.get_id()).first()
     caretake.requestStatusCode = answer
     db.session.commit()
 
@@ -571,7 +571,7 @@ def android_clear_all():
     for email in emails:
         number = number + 1
         ext_user = User.query.filter_by(email=email).first()
-        caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+        caretake = Caretaker.query.filter_by(caretakerId=ext_user.get_id(), observedUserId=user.get_id()).first()
         caretake.requestStatusCode = 0
         db.session.commit()
     response = {'Response': 'Success', 'Code': '209', 'Message': "Cleared users' notifications.", 'Number': number}
