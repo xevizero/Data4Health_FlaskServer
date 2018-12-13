@@ -248,6 +248,7 @@ def android_profile():
     heartbeat = db.session.query(func.avg(HeartRate.heartRateValue))\
         .filter(HeartRate.heartRateUserId==user.get_id(),
                 HeartRate.heartRateTimestamp>midnight, HeartRate.heartRateTimestamp<pastPoint).scalar()
+    emergencystats = EmergencyEvents.query.filter_by(eventId=user.get_id()).order_by(EmergencyEvents.eventTime.desc()).first()
     print(heartbeat)
     response = {}
     data = {}
@@ -266,6 +267,13 @@ def android_profile():
         data['Heartbeat'] = "No measurements"
     else:
         data['Heartbeat'] = int(heartbeat)
+
+    if emergencystats is None:
+        data['EmergencyTime'] = 0
+        data['EmergencyType'] = 'None'
+    else:
+        data['EmergencyTime'] = emergencystats.eventTime
+        data['EmergencyType'] = emergencystats.eventDesc
     response["Data"] = data
     jresponse = json.dumps(response)
     print(jresponse)
@@ -296,6 +304,7 @@ def android_external_profile():
     heartbeat = db.session.query(func.avg(HeartRate.heartRateValue))\
         .filter(HeartRate.heartRateUserId==ext_user.get_id(),
                 HeartRate.heartRateTimestamp>midnight, HeartRate.heartRateTimestamp<pastPoint).scalar()
+    emergencystats = EmergencyEvents.query.filter_by(eventId=ext_user.get_id()).order_by(EmergencyEvents.eventTime.desc()).first()
     response = {}
     data = {}
     response['Response'] = 'Success'
@@ -310,12 +319,16 @@ def android_external_profile():
         data['StatusCode'] = 0
         data['Steps'] = 0
         data['Heartbeat'] = "No measurements"
+        data['EmergencyTime'] = 0
+        data['EmergencyType'] = 'None'
     else:
         if caretaking.requestStatusCode is (0 or 2):
             data['Subscription'] = False
             data['StatusCode'] = caretaking.requestStatusCode
             data['Steps'] = 0
             data['Heartbeat'] = "No measurements"
+            data['EmergencyTime'] = 0
+            data['EmergencyType'] = 'None'
         else:
             data['Subscription'] = caretaking.subscription
             data['StatusCode'] = caretaking.requestStatusCode
@@ -327,6 +340,12 @@ def android_external_profile():
                 data['Heartbeat'] = "No measurements"
             else:
                 data['Heartbeat'] = int(heartbeat)
+            if emergencystats is None:
+                data['EmergencyTime'] = 0
+                data['EmergencyType'] = 'None'
+            else:
+                data['EmergencyTime'] = emergencystats.eventTime
+                data['EmergencyType'] = emergencystats.eventDesc
     response["Data"] = data
     jresponse = json.dumps(response)
     print(jresponse)
@@ -492,9 +511,12 @@ def android_notifications():
         jresponse = json.dumps(response)
         return jresponse
     requests = Caretaker.query.filter_by(observedUserId=user.get_id(), requestStatusCode=2).all()
+    observedusers = Caretaker.query.filter_by(caretakerId=user.get_id(), subscription=1, requestStatusCode=1).all()
+    midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     response = {}
     data = {}
     reqs =[]
+    alerts = []
     for req in requests:
         qr = User.query.filter_by(id=req.caretakerId).first()
         elem = {}
@@ -502,7 +524,19 @@ def android_notifications():
         elem['Surname'] = qr.surname
         elem['Name'] = qr.name
         reqs.append(elem)
+    for observeduser in observedusers:
+        qr = User.query.filter_by(id=observeduser.observedUserId).first()
+        emergencystats = EmergencyEvents.query.filter_by(eventId=observeduser.observedUserId).order_by(EmergencyEvents.eventTime.desc()).filter(EmergencyEvents.eventTime >= midnight).first()
+        elem = {}
+        elem['Email'] = qr.email
+        elem['Surname'] = qr.surname
+        elem['Name'] = qr.name
+        if emergencystats is not None:
+            elem['EmergencyTime'] = emergencystats.eventTime
+            elem['EmergencyType'] = emergencystats.eventDesc
+            alerts.append(elem)
     data['Requests'] = reqs
+    data['Alerts'] = alerts
     response['Data'] = data
     response['Response'] = 'Success'
     response['Code'] = '207'
@@ -645,7 +679,11 @@ def emergency_automatedsos():
                                                    eventUserId=user.get_id(), eventLat=latitude,
                                                    eventLong=longitude,
                                                    eventPhoneNumber=service.EmergencyServicePhoneNumber)
+
+    emergencystat = EmergencyEvents(eventId=user.get_id(),eventTime=datetime.datetime.now(),eventDesc=type)
+
     db.session.add(emergencyrequest)
+    db.session.add(emergencystat)
     db.session.commit()
     response = {'Response': 'Success', 'Code': '220', 'Message': "Data submitted."}
     jresponse = json.dumps(response)
