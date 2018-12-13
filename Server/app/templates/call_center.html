@@ -1,0 +1,115 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+        {% if title %}
+        <title>{{ title }} - Data4Health</title>
+        {% else %}
+        <title>Data4Health</title>
+        {% endif %}
+
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 10px;
+        left: 25%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 5px;
+        left: 50%;
+        margin-left: -180px;
+        width: 350px;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+      }
+      #latlng {
+        width: 225px;
+      }
+    </style>
+
+
+
+    </head>
+    <body>
+    <div style="display: flex">
+        <div align="left"  style="margin-left: 100px; width: 25%; display: flex; justify-content: center; align-items: center">
+            <img src="{{ url_for('static', filename='images/ic_icon.png') }}" width="120px" height="120px"/>
+        </div>
+    <div   style="width: 50%; display: flex; justify-content: center; align-items: center">
+        <h1>Data4Health</h1>
+        </div>
+          <div style="margin-right: 100px; width: 25%; display: flex; justify-content: center; align-items: center">
+
+            <a href="{{ url_for('index') }}" style="margin: 10px" >Website</a>
+
+          </div>
+    </div>
+        <hr>
+
+
+{% block content %}
+    <div style="display: flex; justify-content: center; align-items: center">
+    <div style="margin-left: 100px; width: 10%;"><br></div>
+        <div style="margin-left: 100px; width: 80%;">
+            <h2 align="center">AutomatedSOS Personnel Panel</h2>
+            {% if requests %}
+                {% for req in requests%}
+                    <div align="center">
+                    <hr>
+                        <h3><b>Request #{{ req.eventId }}</b></h3>
+                        <h4>Event time: {{ req.eventTime }}</h4>
+                        <h4>Emergency description: {{ req.eventDesc }}</h4>
+                        <h4>Emergency latitude: {{ req.eventLat }}</h4>
+                        <h4>Emergency longitude: {{ req.eventLong }}</h4>
+                        <h4 onclick="decodeJson('https://eu1.locationiq.com/v1/reverse.php?key=b77748e95b0351&lat={{ req.eventLat }}&lon={{ req.eventLong }}&format=json', 'addr{{ req.eventId }}')" id="addr{{ req.eventId }}"><b>Click here to see address</b></h4>
+                        <h4>Call this phone number: {{ req.eventPhoneNumber }}</h4>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <h3 align="center">No requests at this time.</h3>
+            {% endif %}
+
+        </div>
+    <div style="margin-left: 100px; width: 10%;"><br></div>
+    </div>
+
+    <script type="text/javascript">
+   function Get(url){
+        var Httpreq = new XMLHttpRequest();
+        Httpreq.open("GET",url,false);
+        Httpreq.send(null);
+
+        return Httpreq.responseText;
+    }
+    function decodeJson(url, id){
+       var json_obj = JSON.parse(Get(url));
+       document.getElementById(id).innerHTML = "Event address: " + json_obj.display_name;
+    }
+    </script>
+
+    </body>
+</html>
+
+{% endblock %}

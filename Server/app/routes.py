@@ -1,13 +1,14 @@
-from flask import render_template, flash, redirect, url_for, request, send_from_directory
-from app import app, db, ALLOWED_EXTENSIONS
+from flask import render_template, flash, redirect, url_for, request, send_from_directory, jsonify
+from app import app, db, ALLOWED_EXTENSIONS, UPLOAD_FOLDER, PROJECT_HOME
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
-from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker
+from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker, EmergencyServicesAPI, EmergencyRequestsCallCenter, EmergencyEvents
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from sqlalchemy.sql import func
 from sqlalchemy import or_, and_
 from datetime import date, timedelta
+from shutil import copy2
 import json, datetime, os, time
 
 
@@ -21,7 +22,10 @@ def allowed_file(filename):
 @login_required
 def index():
     usersettings = UserSetting.query.filter_by(userId=current_user.id).first()
-    developer = usersettings.developerAccount
+    if usersettings is None:
+        developer = False
+    else:
+        developer = usersettings.developerAccount
 
     return render_template("index.html", title='Home Page', developer=developer, name=current_user.name)
 
@@ -68,9 +72,11 @@ def register():
         db.session.commit()
         userSetting = UserSetting(userId=user.get_id(), defaultLocationLat=0,
                                   defaultLocationLong=0, automatedSOSOn=1,
-                                  developerAccount=form.developer_option.data, anonymousDataSharingON=1)
+                                  developerAccount=1, anonymousDataSharingON=1)
         db.session.add(userSetting)
         db.session.commit()
+        copy2('{}/user.png'.format(PROJECT_HOME), UPLOAD_FOLDER)
+        os.rename('{}user.png'.format(UPLOAD_FOLDER), UPLOAD_FOLDER + '{}.png'.format(user.email))
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
@@ -79,19 +85,20 @@ def register():
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
 def sqlquery():
+    names = 'aspetta la tua risposta'
+    jresponse = None
     form = GeneralQueryForm()
+    colours = ['Red', 'Blue', 'Black', 'Orange']
     if form.validate_on_submit():
-        city = form.query.data
-        sex1=form.sex.data
-        option1=form.option.data
-        print(city)
-        print(sex1)
-        print(option1)
-        query_string=
-        result=db.engine.execute(query_string)
-
-
-    return render_template('sqlquery.html', title='My Develop', form=form)
+        stringsql = form.query.data
+        print(stringsql)
+        result = db.engine.execute(stringsql)
+        result2 = db.engine.execute(stringsql)
+        names=[]
+        for row in result:
+            names.append(row)
+        jresponse = json.dumps([(dict(row.items())) for row in result2])
+    return render_template('sqlquery.html', title='My Develop', form=form , tab=names, jtext=jresponse, colours=colours)
 
 
 @app.route('/android', methods=['GET', 'POST'])
@@ -196,6 +203,12 @@ def android_homepage():
         response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
         jresponse = json.dumps(response)
         return jresponse
+    userSettings = UserSetting.query.filter_by(userId=user.get_id()).first()
+    if userSettings is None:
+        response = {'Response': 'Error', 'Message': 'No settings found for this user.', 'Code': '110'}
+        jresponse = json.dumps(response)
+        return jresponse
+
     friends = Caretaker.query.filter_by(caretakerId=user.get_id(), requestStatusCode=1).all()
     data = []
     for friend in friends:
@@ -209,6 +222,7 @@ def android_homepage():
     response['Name'] = user.name
     response['Surname'] = user.surname
     response['Data'] = data
+    response['AutomatedSOSOn'] = userSettings.automatedSOSOn
     response['Code'] = '206'
     jresponse = json.dumps(response)
     print(jresponse)
@@ -234,6 +248,7 @@ def android_profile():
     heartbeat = db.session.query(func.avg(HeartRate.heartRateValue))\
         .filter(HeartRate.heartRateUserId==user.get_id(),
                 HeartRate.heartRateTimestamp>midnight, HeartRate.heartRateTimestamp<pastPoint).scalar()
+    emergencystats = EmergencyEvents.query.filter_by(eventId=user.get_id()).order_by(EmergencyEvents.eventTime.desc()).first()
     print(heartbeat)
     response = {}
     data = {}
@@ -252,6 +267,13 @@ def android_profile():
         data['Heartbeat'] = "No measurements"
     else:
         data['Heartbeat'] = int(heartbeat)
+
+    if emergencystats is None:
+        data['EmergencyTime'] = 0
+        data['EmergencyType'] = 'None'
+    else:
+        data['EmergencyTime'] = emergencystats.eventTime
+        data['EmergencyType'] = emergencystats.eventDesc
     response["Data"] = data
     jresponse = json.dumps(response)
     print(jresponse)
@@ -282,6 +304,7 @@ def android_external_profile():
     heartbeat = db.session.query(func.avg(HeartRate.heartRateValue))\
         .filter(HeartRate.heartRateUserId==ext_user.get_id(),
                 HeartRate.heartRateTimestamp>midnight, HeartRate.heartRateTimestamp<pastPoint).scalar()
+    emergencystats = EmergencyEvents.query.filter_by(eventId=ext_user.get_id()).order_by(EmergencyEvents.eventTime.desc()).first()
     response = {}
     data = {}
     response['Response'] = 'Success'
@@ -296,12 +319,16 @@ def android_external_profile():
         data['StatusCode'] = 0
         data['Steps'] = 0
         data['Heartbeat'] = "No measurements"
+        data['EmergencyTime'] = 0
+        data['EmergencyType'] = 'None'
     else:
         if caretaking.requestStatusCode is (0 or 2):
             data['Subscription'] = False
             data['StatusCode'] = caretaking.requestStatusCode
             data['Steps'] = 0
             data['Heartbeat'] = "No measurements"
+            data['EmergencyTime'] = 0
+            data['EmergencyType'] = 'None'
         else:
             data['Subscription'] = caretaking.subscription
             data['StatusCode'] = caretaking.requestStatusCode
@@ -313,6 +340,12 @@ def android_external_profile():
                 data['Heartbeat'] = "No measurements"
             else:
                 data['Heartbeat'] = int(heartbeat)
+            if emergencystats is None:
+                data['EmergencyTime'] = 0
+                data['EmergencyType'] = 'None'
+            else:
+                data['EmergencyTime'] = emergencystats.eventTime
+                data['EmergencyType'] = emergencystats.eventDesc
     response["Data"] = data
     jresponse = json.dumps(response)
     print(jresponse)
@@ -478,17 +511,32 @@ def android_notifications():
         jresponse = json.dumps(response)
         return jresponse
     requests = Caretaker.query.filter_by(observedUserId=user.get_id(), requestStatusCode=2).all()
+    observedusers = Caretaker.query.filter_by(caretakerId=user.get_id(), subscription=1, requestStatusCode=1).all()
+    midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     response = {}
     data = {}
     reqs =[]
+    alerts = []
     for req in requests:
-        qr = User.query.filter_by(id=req.observedUserId).first()
+        qr = User.query.filter_by(id=req.caretakerId).first()
         elem = {}
         elem['Email'] = qr.email
         elem['Surname'] = qr.surname
         elem['Name'] = qr.name
         reqs.append(elem)
+    for observeduser in observedusers:
+        qr = User.query.filter_by(id=observeduser.observedUserId).first()
+        emergencystats = EmergencyEvents.query.filter_by(eventId=observeduser.observedUserId).order_by(EmergencyEvents.eventTime.desc()).filter(EmergencyEvents.eventTime >= midnight).first()
+        elem = {}
+        elem['Email'] = qr.email
+        elem['Surname'] = qr.surname
+        elem['Name'] = qr.name
+        if emergencystats is not None:
+            elem['EmergencyTime'] = emergencystats.eventTime
+            elem['EmergencyType'] = emergencystats.eventDesc
+            alerts.append(elem)
     data['Requests'] = reqs
+    data['Alerts'] = alerts
     response['Data'] = data
     response['Response'] = 'Success'
     response['Code'] = '207'
@@ -510,11 +558,40 @@ def notifications_request_answer():
     email = input_json['Email']
     answer = input_json['Answer']
     ext_user = User.query.filter_by(email=email).first()
-    caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+    caretake = Caretaker.query.filter_by(caretakerId=ext_user.get_id(), observedUserId=user.get_id()).first()
     caretake.requestStatusCode = answer
     db.session.commit()
 
     response = {'Response': 'Success', 'Code': '209', 'Message': "Answer submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+@app.route('/android/sync_health_data', methods=['GET', 'POST'])
+def sync_health_data():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    steps = input_json['Steps']
+    heartrate = input_json['Heartrate']
+
+    heartRate = HeartRate(heartRateUserId=user.get_id(), heartRateValue=heartrate,
+                          heartRateTimestamp=datetime.datetime.now())
+    dailySteps = DailyStep.query.filter_by(dailyStepsId=user.get_id(), stepsDate=datetime.date.today()).first()
+    if dailySteps is None:
+        newDailySteps = DailyStep(dailyStepsId=user.get_id(), stepsValue=steps, stepsDate=datetime.date.today())
+        db.session.add(newDailySteps)
+    else:
+        dailySteps.stepsValue = steps
+    db.session.add(heartRate)
+    db.session.commit()
+
+    response = {'Response': 'Success', 'Code': '210', 'Message': "Data submitted."}
     jresponse = json.dumps(response)
     return jresponse
 
@@ -535,12 +612,88 @@ def android_clear_all():
     for email in emails:
         number = number + 1
         ext_user = User.query.filter_by(email=email).first()
-        caretake = Caretaker.query.filter_by(caretakerId=user.get_id(), observedUserId=ext_user.get_id()).first()
+        caretake = Caretaker.query.filter_by(caretakerId=ext_user.get_id(), observedUserId=user.get_id()).first()
         caretake.requestStatusCode = 0
         db.session.commit()
     response = {'Response': 'Success', 'Code': '209', 'Message': "Cleared users' notifications.", 'Number': number}
     jresponse = json.dumps(response)
     return jresponse
+
+
+@app.route('/android/manage_automatedsos', methods=['GET', 'POST'])
+def manage_automatedsos():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    setting = input_json['AutomatedSOS']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+    userSettings = UserSetting.query.filter_by(userId=user.get_id()).first()
+    if userSettings is None:
+        response = {'Response': 'Error', 'Message': 'No settings found for this user.', 'Code': '110'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    userSettings.automatedSOSOn = setting
+    db.session.commit()
+
+    response = {'Response': 'Success', 'Code': '210', 'Message': "Data submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+@app.route('/android/emergency_automatedsos', methods=['GET', 'POST'])
+def emergency_automatedsos():
+    input_json = request.get_json(force=True)
+    token = input_json['Token']
+    print(token)
+    type = input_json['Type']
+    accurate = input_json['Accurate']
+    latitude = input_json['Latitude']
+    longitude = input_json['Longitude']
+    user = User.verify_auth_token(token)
+    if user is None:
+        response = {'Response': 'Error', 'Message': 'The token does not correspond to a User.', 'Code': '104'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    if not accurate:
+        userSettings = UserSetting.query.filter_by(userId=user.get_id()).first()
+        if userSettings is None:
+            response = {'Response': 'Error', 'Message': 'No settings found for this user.', 'Code': '110'}
+            jresponse = json.dumps(response)
+            return jresponse
+        latitude = userSettings.defaultLocationLat
+        longitude = userSettings.defaultLocationLong
+
+    service = choose_service_from_location(latitude, longitude)
+    if service is None:
+        response = {'Response': 'Error', 'Message': 'No emergency service available for this area.', 'Code': '130'}
+        jresponse = json.dumps(response)
+        return jresponse
+
+    emergencyrequest = EmergencyRequestsCallCenter(eventTime=datetime.datetime.now(), eventDesc=type,
+                                                   eventUserId=user.get_id(), eventLat=latitude,
+                                                   eventLong=longitude,
+                                                   eventPhoneNumber=service.EmergencyServicePhoneNumber)
+
+    emergencystat = EmergencyEvents(eventId=user.get_id(),eventTime=datetime.datetime.now(),eventDesc=type)
+
+    db.session.add(emergencyrequest)
+    db.session.add(emergencystat)
+    db.session.commit()
+    response = {'Response': 'Success', 'Code': '220', 'Message': "Data submitted."}
+    jresponse = json.dumps(response)
+    return jresponse
+
+
+# This function fakes the calculation of the real service to call
+def choose_service_from_location(latitude, longitude):
+    service = EmergencyServicesAPI.query.first()
+    return service
 
 
 #deprecated but useful defs
@@ -570,3 +723,13 @@ def uploads():
     return jresponse
 
 
+@app.route('/customer_service/requests')
+def getRequests():
+    requests = EmergencyRequestsCallCenter.query.all()
+    return requests
+
+
+@app.route('/customer_service/call_center_panel')
+def call_center_panel():
+
+    return render_template("call_center.html", title='Personnel panel', requests=getRequests())
