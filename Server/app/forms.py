@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, DateField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, DateField,SelectField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 from app.models import User
 
@@ -21,6 +21,7 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    developer_option = BooleanField('Developer Account')
     submit = SubmitField('Register')
 
     def validate_email(self, email):
@@ -30,6 +31,8 @@ class RegistrationForm(FlaskForm):
 
 
 class GeneralQueryForm(FlaskForm):
-      query = StringField('Query', validators=[DataRequired()])
+      query = StringField('City', validators=[DataRequired()])
+      sex = SelectField('Sex', choices=[('M','Male'), ('F','Female'), ('O','Other')],validators=[DataRequired()])
+      option = SelectField('Option', choices=[('B','Blood preassure'), ('D','Daily step')],validators=[DataRequired()])
       submit = SubmitField('Send')
 

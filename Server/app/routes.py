@@ -66,6 +66,11 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
+        userSetting = UserSetting(userId=user.get_id(), defaultLocationLat=0,
+                                  defaultLocationLong=0, automatedSOSOn=1,
+                                  developerAccount=form.developer_option.data, anonymousDataSharingON=1)
+        db.session.add(userSetting)
+        db.session.commit()
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
@@ -74,20 +79,19 @@ def register():
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
 def sqlquery():
-    names = 'aspetta la tua risposta'
-    jresponse = None
     form = GeneralQueryForm()
-    colours = ['Red', 'Blue', 'Black', 'Orange']
     if form.validate_on_submit():
-        stringsql = form.query.data
-        print(stringsql)
-        result = db.engine.execute(stringsql)
-        result2 = db.engine.execute(stringsql)
-        names=[]
-        for row in result:
-            names.append(row)
-        jresponse = json.dumps([(dict(row.items())) for row in result2])
-    return render_template('sqlquery.html', title='My Develop', form=form , tab=names, jtext=jresponse, colours=colours)
+        city = form.query.data
+        sex1=form.sex.data
+        option1=form.option.data
+        print(city)
+        print(sex1)
+        print(option1)
+        query_string=
+        result=db.engine.execute(query_string)
+
+
+    return render_template('sqlquery.html', title='My Develop', form=form)
 
 
 @app.route('/android', methods=['GET', 'POST'])

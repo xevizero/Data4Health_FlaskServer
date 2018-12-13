@@ -63,6 +63,9 @@
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
+
+        <p>{{ form.developer_option() }} {{ form.developer_option.label }}</p>
+
         <p>{{ form.submit() }}</p>
     </form>
         </div>
