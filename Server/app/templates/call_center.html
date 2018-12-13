@@ -78,12 +78,12 @@
                 {% for req in requests%}
                     <div align="center">
                     <hr>
-                        <h3>Request #{{ req.eventId }}</h3>
+                        <h3><b>Request #{{ req.eventId }}</b></h3>
                         <h4>Event time: {{ req.eventTime }}</h4>
                         <h4>Emergency description: {{ req.eventDesc }}</h4>
                         <h4>Emergency latitude: {{ req.eventLat }}</h4>
                         <h4>Emergency longitude: {{ req.eventLong }}</h4>
-                        <h4 onclick="javascript:setTimeout(getAddress, 10, {{ req.eventLat }}, {{ req.eventLong }}, 'addr{{ req.eventId }}')" id="addr{{ req.eventId }}"><b>Click here to see address</b></h4>
+                        <h4 onclick="decodeJson('https://eu1.locationiq.com/v1/reverse.php?key=b77748e95b0351&lat={{ req.eventLat }}&lon={{ req.eventLong }}&format=json', 'addr{{ req.eventId }}')" id="addr{{ req.eventId }}"><b>Click here to see address</b></h4>
                         <h4>Call this phone number: {{ req.eventPhoneNumber }}</h4>
                     </div>
                 {% endfor %}
@@ -94,67 +94,21 @@
         </div>
     <div style="margin-left: 100px; width: 10%;"><br></div>
     </div>
+
     <script type="text/javascript">
+   function Get(url){
+        var Httpreq = new XMLHttpRequest();
+        Httpreq.open("GET",url,false);
+        Httpreq.send(null);
 
-    function getAddress(lat, long, id){
-        var geocoder = new google.maps.Geocoder;
-        var latlng = {lat: 40.714224, lng: -73.961452};
-        geocoder.geocode({'location': latlng}, function(results, status) {
-
-            if (status === 'OK') {
-            if (results[0]) {
-              document.getElementById(id).innerHTML = 'Event address: '+results[0].formatted_address;
-            } else {
-              alert('No results found');
-            }
-          } else {
-            //alert('Geocoder failed due to: ' + status);
-          }
-        });
+        return Httpreq.responseText;
+    }
+    function decodeJson(url, id){
+       var json_obj = JSON.parse(Get(url));
+       document.getElementById(id).innerHTML = "Event address: " + json_obj.display_name;
     }
     </script>
-    <script>
-/*
-      function initMap(lat, long) {
-        var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 8,
-          center: {lat: 40.731, lng: -73.997}
-        });
-        var geocoder = new google.maps.Geocoder;
-        var infowindow = new google.maps.InfoWindow;
 
-        document.getElementById('submit').addEventListener('click', function() {
-          geocodeLatLng(geocoder, map, infowindow);
-        });
-      }
-
-      function geocodeLatLng(geocoder, map, infowindow) {
-        var input = document.getElementById('latlng').value;
-        var latlngStr = input.split(',', 2);
-        var latlng = {lat: parseFloat(latlngStr[0]), lng: parseFloat(latlngStr[1])};
-        geocoder.geocode({'location': latlng}, function(results, status) {
-          if (status === 'OK') {
-            if (results[0]) {
-              map.setZoom(11);
-              var marker = new google.maps.Marker({
-                position: latlng,
-                map: map
-              });
-              infowindow.setContent(results[0].formatted_address);
-              infowindow.open(map, marker);
-            } else {
-              window.alert('No results found');
-            }
-          } else {
-            window.alert('Geocoder failed due to: ' + status);
-          }
-        });
-      }*/
-    </script>
-
-    <script async defer
-         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRrdh45NF3yD9DuOWj3k0yDWBfYj1-FW8&callback=getAddress">
-    </script>
     </body>
 </html>
 
