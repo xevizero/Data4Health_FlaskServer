@@ -1,7 +1,8 @@
 from flask import render_template, flash, redirect, url_for, request, send_from_directory, jsonify
 from app import app, db, ALLOWED_EXTENSIONS, UPLOAD_FOLDER, PROJECT_HOME
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
-from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker, EmergencyServicesAPI, EmergencyRequestsCallCenter, EmergencyEvents
+from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker, EmergencyServicesAPI,\
+    EmergencyRequestsCallCenter, EmergencyEvents
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
@@ -85,20 +86,66 @@ def register():
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
 def sqlquery():
-    names = 'aspetta la tua risposta'
     jresponse = None
     form = GeneralQueryForm()
-    colours = ['Red', 'Blue', 'Black', 'Orange']
+    legalIDs = UserSetting.query.with_entities(UserSetting.userId).filter_by(anonymousDataSharingON=1).all()
+    legalIntIDs = [id[0] for id in legalIDs]
     if form.validate_on_submit():
-        stringsql = form.query.data
-        print(stringsql)
-        result = db.engine.execute(stringsql)
-        result2 = db.engine.execute(stringsql)
-        names=[]
-        for row in result:
-            names.append(row)
-        jresponse = json.dumps([(dict(row.items())) for row in result2])
-    return render_template('sqlquery.html', title='My Develop', form=form , tab=names, jtext=jresponse, colours=colours)
+        argument = form.argument.data
+        sex = form.sex.data
+        age_from = form.age_from.data
+        age_to = form.age_to.data
+        weight_from = form.weight_from.data
+        weight_to = form.weight_to.data
+        sex_list = {}
+        age_from_list = {}
+        age_to_list = {}
+        weight_from_list = {}
+        weight_to_list = {}
+        lists = []
+        if sex is not None:
+            sex_list = {'SELECT':'U.sex','FROM':'User','WHERE':'U.sex = ' + "'" + sex + "'"}
+            lists.append(sex_list)
+        if age_from is not None:
+            age_from_list = {'SELECT':'U.birthday','FROM':'User',
+                             'WHERE':'U.birthday > ' + "'" + age_from + "-01-01" + "'"}
+            lists.append(age_from_list)
+        if age_to is not None:
+            age_to_list = {'SELECT':'U.birthday','FROM':'User',
+                           'WHERE':'U.birthday < ' + "'" + age_to + "-01-01" + "'"}
+            lists.append(age_to_list)
+        if weight_from is not None:
+            weight_from_list = {'SELECT':'W.weightValue','FROM':'Weight',
+                                'WHERE':'W.weightValue > ' + "'" + weight_from + "'",
+                                'JOIN':'User ON U.id=W.userIdWeight'}
+            lists.append(weight_from_list)
+        if weight_to is not None:
+            weight_to_list = {'SELECT':'W.weightValue','FROM':'Weight',
+                              'WHERE':'W.weightValue < ' + "'" + weight_to + "'",
+                              'JOIN':'User on U.id=W.userIdWeight'}
+            lists.append(weight_to_list)
+        selectes = 'SELECT '
+        froms = 'FROM '
+        wheres = 'WHERE '
+        for list in lists:
+            if list:
+                selectes = selectes + list['SELECT'] + ', '
+                froms = froms + list['FROM'] + ', '
+                wheres = wheres + list['WHERE'] + ', '
+            else:
+                print('ciao')
+        selectes = selectes[:-2]
+        selectes = selectes + ' '
+        froms = froms[:-2]
+        froms = froms + ' '
+        wheres = wheres[:-2]
+        wheres = wheres + ' '
+        #stringsql = form.query.data
+        #print(stringsql)
+        #result = db.engine.execute(stringsql)
+        #result2 = db.engine.execute(stringsql)
+        #jresponse = json.dumps([(dict(row.items())) for row in result2])
+    return render_template('sqlquery.html', title='My Develop', form=form, jtext=jresponse)
 
 
 @app.route('/android', methods=['GET', 'POST'])

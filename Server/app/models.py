@@ -21,7 +21,7 @@ class EmergencyEvents(db.Model):
     __tablename__ = 'EmergencyStats'
 
     eventId = db.Column(db.ForeignKey('User.id'), primary_key=True)
-    eventTime = db.Column(db.Integer, nullable=False)
+    eventTime = db.Column(db.Integer, nullable=False) #primary pure questo
     eventDesc = db.Column(db.String)
 
 
@@ -29,7 +29,7 @@ class EmergencyRequestsCallCenter(db.Model):
     __tablename__ = 'EmergencyRequestsCallCenter'
 
     eventId = db.Column(db.Integer, primary_key=True)
-    eventTime = db.Column(db.Integer, nullable=False)
+    eventTime = db.Column(db.Integer, nullable=False) #primary
     eventDesc = db.Column(db.String)
     eventUserId = db.Column(db.Integer)
     eventLat = db.Column(db.Float)

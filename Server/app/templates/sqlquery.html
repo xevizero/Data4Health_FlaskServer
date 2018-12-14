@@ -4,48 +4,55 @@
     <h1>My Develop</h1>
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
-          <p>
-            {{ form.sex.label }}<br>
-            {{ form.sex(size=32) }}<br>
-          </p>
-          <p>
-            {{ form.option.label }}<br>
-            {{ form.option(size=32) }}<br>
-          </p>
-           <p>
-            {{ form.query.label }}<br>
-            {{ form.query(size=32) }}<br>
-            {% for error in form.query.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>{{ form.submit() }}</p>
+            <p>
+                {{ form.argument.label }}<br>
+                {{ form.argument(size=32) }}<br>
+                {% for error in form.argument.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ form.sex.label }}<br>
+                {{ form.sex(size=32) }}<br>
+                {% for error in form.sex.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ form.age_from.label }}<br>
+                {{ form.age_from(size=32) }}<br>
+                {% for error in form.age_from.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ form.age_to.label }}<br>
+                {{ form.age_to(size=32) }}<br>
+                {% for error in form.age_to.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ form.weight_from.label }}<br>
+                {{ form.weight_from(size=32) }}<br>
+                {% for error in form.weight_from.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ form.weight_to.label }}<br>
+                {{ form.weight_to(size=32) }}<br>
+                {% for error in form.weight_to.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>{{ form.submit() }}</p>
     </form>
-
-    {% if tab =='aspetta la tua risposta'%}
-        <p>
-            {{ result }}
-        </p>
-    {% endif %}
-
     <style>
     table ,td{
         border:1px solid black;
     }
     </style>
-    {% if tab !='aspetta la tua risposta' %}
-    <table>
-        {% for res in tab %}
-            <tr>
-            {% for res2 in res %}
-                <td>
-                {{ res2 }}
-                </td>
-            {% endfor %}
-            </tr>
-        {% endfor %}
-    </table>
-    {% endif %}
     {% if jtext != None %}
         <textarea row="40" cols="200">
             {{ jtext }}
