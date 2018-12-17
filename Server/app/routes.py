@@ -2,7 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, send_from_
 from app import app, db, ALLOWED_EXTENSIONS, UPLOAD_FOLDER, PROJECT_HOME
 from app.forms import LoginForm, RegistrationForm, GeneralQueryForm
 from app.models import User, UserSetting, DailyStep, HeartRate, Caretaker, EmergencyServicesAPI,\
-    EmergencyRequestsCallCenter, EmergencyEvents
+    EmergencyRequestsCallCenter, EmergencyEvents, Weight, BloodPressure
 from flask_login import logout_user, login_required, current_user, login_user
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
@@ -97,49 +97,60 @@ def sqlquery():
         age_to = form.age_to.data
         weight_from = form.weight_from.data
         weight_to = form.weight_to.data
-        sex_list = {}
-        age_from_list = {}
-        age_to_list = {}
-        weight_from_list = {}
-        weight_to_list = {}
-        lists = []
+        sexIntIDs = []
+        ageFromIntIDs = []
+        ageToIntIDs = []
+        weightFromIntIDs = []
+        weightToIntIDs = []
         if sex is not None:
-            sex_list = {'SELECT':'U.sex','FROM':'User','WHERE':'U.sex = ' + "'" + sex + "'"}
-            lists.append(sex_list)
+            sexIDs = User.query.with_entities(User.id).filter_by(sex=sex).all()
+            sexIntIDs = [id[0] for id in sexIDs]
+            for id in sexIntIDs:
+                if id in legalIntIDs:
+                    legalIntIDs.remove(id)
         if age_from is not None:
-            age_from_list = {'SELECT':'U.birthday','FROM':'User',
-                             'WHERE':'U.birthday > ' + "'" + age_from + "-01-01" + "'"}
-            lists.append(age_from_list)
+            age_from_complete = age_from + "-01-01"
+            ageFromIDs = User.query.with_entities(User.id).filter(User.birthday>age_from_complete).all()
+            ageFromIntIDs = [id[0] for id in ageFromIDs]
+            for id in ageFromIntIDs:
+                if id in legalIntIDs:
+                    legalIntIDs.remove(id)
         if age_to is not None:
-            age_to_list = {'SELECT':'U.birthday','FROM':'User',
-                           'WHERE':'U.birthday < ' + "'" + age_to + "-01-01" + "'"}
-            lists.append(age_to_list)
+            age_to_complete = age_to + "-01-01"
+            ageToIDs = User.query.with_entities(User.id).filter(User.birthday<age_to_complete).all()
+            ageToIntIDs = [id[0] for id in ageToIDs]
+            for id in ageToIntIDs:
+                if id in legalIntIDs:
+                    legalIntIDs.remove(id)
         if weight_from is not None:
-            weight_from_list = {'SELECT':'W.weightValue','FROM':'Weight',
-                                'WHERE':'W.weightValue > ' + "'" + weight_from + "'",
-                                'JOIN':'User ON U.id=W.userIdWeight'}
-            lists.append(weight_from_list)
+            weightFromIDs = Weight.query.with_entities(Weight.userIdWeight)\
+                .filter(Weight.weightValue>weight_from).all()
+            weightFromIntIDs = [id[0] for id in weightFromIDs]
+            for id in weightFromIntIDs:
+                if id in legalIntIDs:
+                    legalIntIDs.remove(id)
         if weight_to is not None:
-            weight_to_list = {'SELECT':'W.weightValue','FROM':'Weight',
-                              'WHERE':'W.weightValue < ' + "'" + weight_to + "'",
-                              'JOIN':'User on U.id=W.userIdWeight'}
-            lists.append(weight_to_list)
-        selectes = 'SELECT '
-        froms = 'FROM '
-        wheres = 'WHERE '
-        for list in lists:
-            if list:
-                selectes = selectes + list['SELECT'] + ', '
-                froms = froms + list['FROM'] + ', '
-                wheres = wheres + list['WHERE'] + ', '
-            else:
-                print('ciao')
-        selectes = selectes[:-2]
-        selectes = selectes + ' '
-        froms = froms[:-2]
-        froms = froms + ' '
-        wheres = wheres[:-2]
-        wheres = wheres + ' '
+            weightToIDs = Weight.query.with_entities(Weight.userIdWeight)\
+                .filter(Weight.weightValue<weight_to).all()
+            weightToIntIDs = [id[0] for id in weightToIDs]
+            for id in weightToIntIDs:
+                if id in legalIntIDs:
+                    legalIntIDs.remove(id)
+        if argument == 'BloodPressure':
+            #result = BloodPressure.query.with_entities(BloodPressure.bloodPressureUserId,
+            #                                           BloodPressure.bloodPressureLowValue,
+            #                                           BloodPressure.bloodPressureHighValue,
+            #                                           BloodPressure.bloodPressureTimestamp).filter(BloodPressure.bloodPressureUserId.in_(legalIntIDs)).all()
+            stringsql = "SELECT * FROM BloodPressure WHERE BloodPressure.bloodPressureUserId in " \
+                        "(" + ", ".join(str(x) for x in legalIntIDs + ")")
+        elif argument == "HeartRate":
+            stringsql = "SELECT * FROM HeartRate WHERE HeartRate.heartRateUserId in " \
+                        "(" + ", ".join(str(x) for x in legalIntIDs + ")")
+        else:
+            stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
+                        "(" + ", ".join(str(x) for x in legalIntIDs + ")")
+        res = db.engine.execute(stringsql)
+        jres = json.dumps([(dict(row.items())) for row in res])
         #stringsql = form.query.data
         #print(stringsql)
         #result = db.engine.execute(stringsql)
