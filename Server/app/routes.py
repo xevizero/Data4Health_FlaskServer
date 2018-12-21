@@ -147,7 +147,9 @@ def data4helpapi():
         stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
                 "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
     res = db.engine.execute(stringsql)
-    jres = json.dumps([(dict(row.items())) for row in res])
+    jres = {}
+    if res is not None:
+        jres = json.dumps([(dict(row.items())) for row in res])
     print(jres)
     #stringsql = form.query.data
     #print(stringsql)
