@@ -146,6 +146,7 @@ def data4helpapi():
             if res is not None:
                 jres = json.dumps([(dict(row.items())) for row in res])
             print(jres)
+            return jres
     elif argument == "HeartRate":
         stringsql = "SELECT * FROM HeartRate WHERE HeartRate.heartRateUserId in " \
                     "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
@@ -155,6 +156,7 @@ def data4helpapi():
             if res is not None:
                 jres = json.dumps([(dict(row.items())) for row in res])
             print(jres)
+            return jres
     elif argument == "dailySteps":
         stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
                 "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
@@ -164,7 +166,12 @@ def data4helpapi():
             if res is not None:
                 jres = json.dumps([(dict(row.items())) for row in res])
             print(jres)
-    return jres
+            return jres
+    else:
+        response = {'Response': 'Error', 'Message': 'Forbidden', 'Code': '403'}
+        print(response)
+        jresponse = json.dumps(response)
+        return jresponse
 
 
 
