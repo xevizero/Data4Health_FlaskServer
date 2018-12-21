@@ -20,8 +20,8 @@ class EmergencyServicesAPI(db.Model):
 class EmergencyEvents(db.Model):
     __tablename__ = 'EmergencyStats'
 
-    eventId = db.Column(db.ForeignKey('User.id'), primary_key=True)
-    eventTime = db.Column(db.Integer, nullable=False) #primary pure questo
+    eventId = db.Column(db.Integer, primary_key=True)
+    eventTime = db.Column(db.Integer, primary_key=True)
     eventDesc = db.Column(db.String)
 
 
@@ -29,7 +29,7 @@ class EmergencyRequestsCallCenter(db.Model):
     __tablename__ = 'EmergencyRequestsCallCenter'
 
     eventId = db.Column(db.Integer, primary_key=True)
-    eventTime = db.Column(db.Integer, nullable=False) #primary
+    eventTime = db.Column(db.Integer, nullable=False)
     eventDesc = db.Column(db.String)
     eventUserId = db.Column(db.Integer)
     eventLat = db.Column(db.Float)
@@ -79,10 +79,10 @@ class User(UserMixin, db.Model):
         return user
 
 
-class BloodPressure(User):
+class BloodPressure(db.Model):
     __tablename__ = 'BloodPressure'
 
-    bloodPressureUserId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    bloodPressureUserId = db.Column(db.Integer, primary_key=True)
     bloodPressureLowValue = db.Column(db.Integer, nullable=False)
     bloodPressureHighValue = db.Column(db.Integer, nullable=False)
     bloodPressureTimestamp = db.Column(db.DateTime, nullable=False)
@@ -91,9 +91,7 @@ class BloodPressure(User):
 class Caretaker(db.Model):
     __tablename__ = 'Caretaker'
 
-    caretakerId = db.Column(db.Integer,
-                            #db.ForeignKey('User.id'),
-                            primary_key=True)
+    caretakerId = db.Column(db.Integer, primary_key=True)
     observedUserId = db.Column(db.Integer, nullable=False, primary_key=True)
     subscription = db.Column(db.Boolean, nullable=False)
     # 0 rifiutata
@@ -105,9 +103,7 @@ class Caretaker(db.Model):
 class DailyStep(db.Model):
     __tablename__ = 'DailyStep'
 
-    dailyStepsId = db.Column(db.Integer,
-                             #db.ForeignKey('User.id'),
-                             primary_key=True)
+    dailyStepsId = db.Column(db.Integer, primary_key=True)
     stepsValue = db.Column(db.Integer, nullable=False)
     stepsDate = db.Column(db.Date, nullable=False, primary_key=True)
 
@@ -118,9 +114,7 @@ class DailyStep(db.Model):
 class HeartRate(db.Model):
     __tablename__ = 'HeartRate'
 
-    heartRateUserId = db.Column(db.Integer,
-                                #db.ForeignKey('User.id'),
-                                primary_key=True)
+    heartRateUserId = db.Column(db.Integer, primary_key=True)
     heartRateValue = db.Column(db.Integer, nullable=False)
     heartRateTimestamp = db.Column(db.DateTime, nullable=False, primary_key=True)
 
@@ -128,9 +122,7 @@ class HeartRate(db.Model):
 class UserSetting(db.Model):
     __tablename__ = 'UserSetting'
 
-    userId = db.Column(db.Integer,
-                       #db.ForeignKey('User.id'),
-                       primary_key=True)
+    userId = db.Column(db.Integer, primary_key=True)
     defaultLocationLat = db.Column(db.Float, nullable=False)
     defaultLocationLong = db.Column(db.Float, nullable=False)
     automatedSOSOn = db.Column(db.Boolean, nullable=False)
@@ -138,19 +130,19 @@ class UserSetting(db.Model):
     anonymousDataSharingON = db.Column(db.Boolean, nullable=False)
 
 
-class UsersLocation(User):
+class UsersLocation(db.Model):
     __tablename__ = 'UsersLocation'
 
-    usersLocationId = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    usersLocationId = db.Column(db.Integer, primary_key=True)
     userLat = db.Column(db.Float, nullable=False)
     userLong = db.Column(db.Float, nullable=False)
     locationUpdateTimestamp = db.Column(db.DateTime, nullable=False)
 
 
-class Weight(User):
+class Weight(db.Model):
     __tablename__ = 'Weight'
 
-    userIdWeight = db.Column(db.ForeignKey('User.id'), primary_key=True)
+    userIdWeight = db.Column(db.Integer, primary_key=True)
     weightValue = db.Column(db.Float, nullable=False)
     weightTimestamp = db.Column(db.DateTime, nullable=False)
 
