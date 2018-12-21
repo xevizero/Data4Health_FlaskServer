@@ -133,8 +133,6 @@ def data4helpapi():
         for id in weightToIntIDs:
             if id in legalIntIDs:
                 legalIntIDs.remove(id)
-    res = None
-    stringsql = None
     if argument == 'BloodPressure':
         #result = BloodPressure.query.with_entities(BloodPressure.bloodPressureUserId,
         #                                           BloodPressure.bloodPressureLowValue,
@@ -142,24 +140,33 @@ def data4helpapi():
         #                                           BloodPressure.bloodPressureTimestamp).filter(BloodPressure.bloodPressureUserId.in_(legalIntIDs)).all()
         stringsql = "SELECT * FROM BloodPressure WHERE BloodPressure.bloodPressureUserId in " \
                     "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
+        if stringsql is not None:
+            res = db.engine.execute(stringsql)
+            jres = {}
+            if res is not None:
+                jres = json.dumps([(dict(row.items())) for row in res])
+            print(jres)
     elif argument == "HeartRate":
         stringsql = "SELECT * FROM HeartRate WHERE HeartRate.heartRateUserId in " \
                     "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
+        if stringsql is not None:
+            res = db.engine.execute(stringsql)
+            jres = {}
+            if res is not None:
+                jres = json.dumps([(dict(row.items())) for row in res])
+            print(jres)
     elif argument == "dailySteps":
         stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
                 "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
-    if stringsql is not None:
-        res = db.engine.execute(stringsql)
-    jres = {}
-    if res is not None:
-        jres = json.dumps([(dict(row.items())) for row in res])
-    print(jres)
-    #stringsql = form.query.data
-    #print(stringsql)
-    #result = db.engine.execute(stringsql)
-    #result2 = db.engine.execute(stringsql)
-    #jresponse = json.dumps([(dict(row.items())) for row in result2])
+        if stringsql is not None:
+            res = db.engine.execute(stringsql)
+            jres = {}
+            if res is not None:
+                jres = json.dumps([(dict(row.items())) for row in res])
+            print(jres)
     return jres
+
+
 
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
