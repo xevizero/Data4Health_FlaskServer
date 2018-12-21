@@ -133,7 +133,6 @@ def data4helpapi():
         for id in weightToIntIDs:
             if id in legalIntIDs:
                 legalIntIDs.remove(id)
-    stringsql = '';
     if argument == 'BloodPressure':
         #result = BloodPressure.query.with_entities(BloodPressure.bloodPressureUserId,
         #                                           BloodPressure.bloodPressureLowValue,
@@ -147,7 +146,8 @@ def data4helpapi():
     elif argument == "dailySteps":
         stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
                 "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
-    res = db.engine.execute(stringsql)
+    if stringsql is not None:
+        res = db.engine.execute(stringsql)
     jres = {}
     if res is not None:
         jres = json.dumps([(dict(row.items())) for row in res])
