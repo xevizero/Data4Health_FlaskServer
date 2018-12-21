@@ -143,9 +143,9 @@ def data4helpapi():
     elif argument == "HeartRate":
         stringsql = "SELECT * FROM HeartRate WHERE HeartRate.heartRateUserId in " \
                     "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
-    else:
+    elif argument == "dailySteps":
         stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
-                    "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
+                "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
     res = db.engine.execute(stringsql)
     jres = json.dumps([(dict(row.items())) for row in res])
     print(jres)
