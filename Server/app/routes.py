@@ -133,6 +133,7 @@ def data4helpapi():
         for id in weightToIntIDs:
             if id in legalIntIDs:
                 legalIntIDs.remove(id)
+    stringsql = '';
     if argument == 'BloodPressure':
         #result = BloodPressure.query.with_entities(BloodPressure.bloodPressureUserId,
         #                                           BloodPressure.bloodPressureLowValue,
