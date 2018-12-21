@@ -177,7 +177,7 @@ def sqlquery():
         weightFromIntIDs = []
         weightToIntIDs = []
         if sex != "None":
-            sexIDs = User.query.with_entities(User.id).filter_by(sex!=sex).all()
+            sexIDs = User.query.with_entities(User.id).filter(User.sex!=sex).all()
             sexIntIDs = [id[0] for id in sexIDs]
             for id in sexIntIDs:
                 if id in legalIntIDs:
