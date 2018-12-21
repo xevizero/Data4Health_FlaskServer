@@ -83,13 +83,87 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+@app.route('/data4help/api', methods=['GET', 'POST'])
+def data4helpapi():
+    jres = None
+    legalIDs = UserSetting.query.with_entities(UserSetting.userId).filter_by(anonymousDataSharingON=1).all()
+    legalIntIDs = [id[0] for id in legalIDs]
+    argument = request.args.get('Argument')
+    sex = request.args.get('Sex')
+    age_from = request.args.get('AgeFrom')
+    age_to = request.args.get('AgeTo')
+    weight_from = request.args.get('WeightFrom')
+    weight_to = request.args.get('WeightTo')
+    sexIntIDs = []
+    ageFromIntIDs = []
+    ageToIntIDs = []
+    weightFromIntIDs = []
+    weightToIntIDs = []
+    if sex is not None:
+        sexIDs = User.query.with_entities(User.id).filter(User.sex!=sex).all()
+        sexIntIDs = [id[0] for id in sexIDs]
+        for id in sexIntIDs:
+            if id in legalIntIDs:
+                legalIntIDs.remove(id)
+    if age_from is not None:
+        age_from_complete = age_from + "-01-01"
+        ageFromIDs = User.query.with_entities(User.id).filter(User.birthday>age_from_complete).all()
+        ageFromIntIDs = [id[0] for id in ageFromIDs]
+        for id in ageFromIntIDs:
+            if id in legalIntIDs:
+                legalIntIDs.remove(id)
+    if age_to is not None:
+        age_to_complete = age_to + "-01-01"
+        ageToIDs = User.query.with_entities(User.id).filter(User.birthday<age_to_complete).all()
+        ageToIntIDs = [id[0] for id in ageToIDs]
+        for id in ageToIntIDs:
+            if id in legalIntIDs:
+                legalIntIDs.remove(id)
+    if weight_from is not None:
+        weightFromIDs = Weight.query.with_entities(Weight.userIdWeight)\
+            .filter(Weight.weightValue>weight_from).all()
+        weightFromIntIDs = [id[0] for id in weightFromIDs]
+        for id in weightFromIntIDs:
+            if id in legalIntIDs:
+                legalIntIDs.remove(id)
+    if weight_to is not None:
+        weightToIDs = Weight.query.with_entities(Weight.userIdWeight)\
+            .filter(Weight.weightValue<weight_to).all()
+        weightToIntIDs = [id[0] for id in weightToIDs]
+        for id in weightToIntIDs:
+            if id in legalIntIDs:
+                legalIntIDs.remove(id)
+    if argument == 'BloodPressure':
+        #result = BloodPressure.query.with_entities(BloodPressure.bloodPressureUserId,
+        #                                           BloodPressure.bloodPressureLowValue,
+        #                                           BloodPressure.bloodPressureHighValue,
+        #                                           BloodPressure.bloodPressureTimestamp).filter(BloodPressure.bloodPressureUserId.in_(legalIntIDs)).all()
+        stringsql = "SELECT * FROM BloodPressure WHERE BloodPressure.bloodPressureUserId in " \
+                    "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
+    elif argument == "HeartRate":
+        stringsql = "SELECT * FROM HeartRate WHERE HeartRate.heartRateUserId in " \
+                    "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
+    else:
+        stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
+                    "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
+    res = db.engine.execute(stringsql)
+    jres = json.dumps([(dict(row.items())) for row in res])
+    print(jres)
+    #stringsql = form.query.data
+    #print(stringsql)
+    #result = db.engine.execute(stringsql)
+    #result2 = db.engine.execute(stringsql)
+    #jresponse = json.dumps([(dict(row.items())) for row in result2])
+    return jres
+
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
 def sqlquery():
-    jresponse = None
+    jres = None
     form = GeneralQueryForm()
     legalIDs = UserSetting.query.with_entities(UserSetting.userId).filter_by(anonymousDataSharingON=1).all()
     legalIntIDs = [id[0] for id in legalIDs]
+    print(legalIntIDs)
     if form.validate_on_submit():
         argument = form.argument.data
         sex = form.sex.data
@@ -102,20 +176,20 @@ def sqlquery():
         ageToIntIDs = []
         weightFromIntIDs = []
         weightToIntIDs = []
-        if sex is not None:
-            sexIDs = User.query.with_entities(User.id).filter_by(sex=sex).all()
+        if sex != "None":
+            sexIDs = User.query.with_entities(User.id).filter_by(sex!=sex).all()
             sexIntIDs = [id[0] for id in sexIDs]
             for id in sexIntIDs:
                 if id in legalIntIDs:
                     legalIntIDs.remove(id)
-        if age_from is not None:
+        if age_from != "None":
             age_from_complete = age_from + "-01-01"
             ageFromIDs = User.query.with_entities(User.id).filter(User.birthday>age_from_complete).all()
             ageFromIntIDs = [id[0] for id in ageFromIDs]
             for id in ageFromIntIDs:
                 if id in legalIntIDs:
                     legalIntIDs.remove(id)
-        if age_to is not None:
+        if age_to != "None":
             age_to_complete = age_to + "-01-01"
             ageToIDs = User.query.with_entities(User.id).filter(User.birthday<age_to_complete).all()
             ageToIntIDs = [id[0] for id in ageToIDs]
@@ -142,21 +216,22 @@ def sqlquery():
             #                                           BloodPressure.bloodPressureHighValue,
             #                                           BloodPressure.bloodPressureTimestamp).filter(BloodPressure.bloodPressureUserId.in_(legalIntIDs)).all()
             stringsql = "SELECT * FROM BloodPressure WHERE BloodPressure.bloodPressureUserId in " \
-                        "(" + ", ".join(str(x) for x in legalIntIDs + ")")
+                        "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
         elif argument == "HeartRate":
             stringsql = "SELECT * FROM HeartRate WHERE HeartRate.heartRateUserId in " \
-                        "(" + ", ".join(str(x) for x in legalIntIDs + ")")
+                        "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
         else:
             stringsql = "SELECT * FROM DailyStep WHERE DailyStep.dailyStepsId in " \
-                        "(" + ", ".join(str(x) for x in legalIntIDs + ")")
+                        "(" + ''.join(str(legalIntIDs)[1:-1]) + ")"
         res = db.engine.execute(stringsql)
         jres = json.dumps([(dict(row.items())) for row in res])
+        print(jres)
         #stringsql = form.query.data
         #print(stringsql)
         #result = db.engine.execute(stringsql)
         #result2 = db.engine.execute(stringsql)
         #jresponse = json.dumps([(dict(row.items())) for row in result2])
-    return render_template('sqlquery.html', title='My Develop', form=form, jtext=jresponse)
+    return render_template('sqlquery.html', title='My Develop', form=form, jtext=jres)
 
 
 @app.route('/android', methods=['GET', 'POST'])
