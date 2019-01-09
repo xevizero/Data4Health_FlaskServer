@@ -58,6 +58,49 @@ BloodPressure - HeartRate - dailySteps
 To actually see any data you'll need to populate a test database. We used SQLite which makes this a fairly easy task, just open the app.db
 file in any SQLite editor, there are even online editors you can use. You can also use the command line or our Android Client if you have
 a wearable device to generate biometric data with.
+## Populating the Server (terminal)
+In order to test the application you may want to modify the database. Once you have downloaded (and installed) everything like explained above, you open a terminal and enter the /Data4Health_FlaskServer/Server directory. Now you can write the command:
+```
+python3
+```
+If you have python3 installed (it should work with Python 2.x as well).
+Now the terminal is a so-called Python Shell, which means you can now write Python code which will be executed line-by-line. (this also means that from now on you can write the following lines of code in a separate .py file that can be executed normally like any other Python program, just be sure that it is being executed in the directory where the app.db file currently is).
+Now, execute these few lines:
+```
+from app import app, db
+import sqlalchemy
+from app.models import ####
+```
+Instead of #### you should enter the name of the models you want to use, so for example if you want to modify the User and UserSetting tables you should write:
+```
+from app.models import User, UserSetting
+```
+Here're a few example that show what you can do:
+- ADDING A NEW INSTANCE IN A TABLE
+```
+u = User(name='giacomo', surname='lancellotti', email='... ) #you get the idea
+db.session.add(u)
+```
+- GETTING A ROW
+```
+jack = User.query.filter_by(username='giacomo').first()
+```
+You can now modifiy its values by simply:
+```
+jack.email = ...
+```
+- DELETING A ROW
+```
+db.session.delete(jack)
+```
+This should be obviously written after a 'get', in this case with the 'jack' value.
+- UDATING THE DB
+```
+db.session.commit()
+```
+Adding, getting and deleting do not simply modify the Database per se. It will be updated only once you write the commit.
+
+These are just a few examples, if you want something more specific you can either read our code in /Server/app/routes.py which uses sqlalchemy quite extensively, or read directly the docs at http://flask-sqlalchemy.pocoo.org/2.3/ .
 # Final Notes
 For any question feel free to contact us and we'll provide the necessary sypport if you have zero experience with the Python language
 or PyCharm.
