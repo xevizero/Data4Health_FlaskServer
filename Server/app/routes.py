@@ -12,12 +12,18 @@ from datetime import date, timedelta
 from shutil import copy2
 import json, datetime, os, time
 
+# Quick explanation: from now on every def decorated with @app.route() represents a web page. This does not
+# mean that all of them display a HTML page on screen. For example, every page whose route starts with
+# /android/... is referred only by the app we wrote.
+# A more specific description will explain what's its purpose.
+
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# This is the homepage. It just shows the logged user's name.
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -31,6 +37,7 @@ def index():
     return render_template("index.html", title='Home Page', developer=developer, name=current_user.name)
 
 
+# This is the login page. It shows the form to be filled by the user and handles background operations.
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -53,6 +60,7 @@ def login():
     return render_template('login.html', title='Sign In', form=form)
 
 
+# Pretty straightforward: it logs the user out and redirects to the homepage.
 @app.route('/logout')
 def logout():
     logout_user()
@@ -60,6 +68,8 @@ def logout():
     return redirect(url_for('index'))
 
 
+# This handles the registration process. It shows the form to be filled and writes the collected info
+# in the DB.
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -83,6 +93,9 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+# This is the Data4HelpAPI. It is access by a single HTTP GET request an responds with a json dump of the
+# result of the interrogation. It works exactly like the page /sqlquery does (the one below) but the
+# difference is that it is only access via HTTP GET, nothing is rendered on screen.
 @app.route('/data4help/api', methods=['GET', 'POST'])
 def data4helpapi():
     jres = None
@@ -173,8 +186,15 @@ def data4helpapi():
         jresponse = json.dumps(response)
         return jresponse
 
+    ## The following pseudo-code lines represent the fact that data should not be shown unless the population
+    ## is high enough, as the documentation we were given states. It is not part of the full code because
+    ## of our low population DB. These two lines should be placed just above every "return jres" of the above def.
+    # if jres.lenght < 2000:
+    #   jres = 'Not enough data'
 
 
+# This is the query page for anonymous data interrogation. It is almost the same code on the page above, the main
+# difference is that here everyhing is shown on screen.
 @app.route('/sqlquery', methods=['GET', 'POST'])
 @login_required
 def sqlquery():
@@ -245,6 +265,14 @@ def sqlquery():
         res = db.engine.execute(stringsql)
         jres = json.dumps([(dict(row.items())) for row in res])
         print(jres)
+        ## The following pseudo-code lines represent the fact that data should not be shown unless the population
+        ## is high enough, as the documentation we were given states. It is not part of the full code because
+        ## of our low population DB.
+        # if jres.lenght < 2000:
+        #   jres = 'Not enough data'
+
+
+        ## DEPRECATED LINES
         #stringsql = form.query.data
         #print(stringsql)
         #result = db.engine.execute(stringsql)
@@ -253,6 +281,7 @@ def sqlquery():
     return render_template('sqlquery.html', title='My Develop', form=form, jtext=jres)
 
 
+# Deprecated.
 @app.route('/android', methods=['GET', 'POST'])
 def android():
     input_json = request.get_json(force=True)
@@ -265,6 +294,7 @@ def android():
     return 'Tutto ok'
 
 
+# This is the page the android app refers to when handling registration information.
 @app.route('/android/register', methods=['GET', 'POST'])
 def android_register():
     name = request.form['name']
@@ -317,6 +347,7 @@ def android_register():
     return jresponse
 
 
+# This is the page the android refers to when handling login information.
 @app.route('/android/login', methods=['GET', 'POST'])
 def android_login():
     input_json = request.get_json(force=True)
@@ -346,6 +377,7 @@ def android_login():
     return jresponse
 
 
+# This handles the info that is needed to be displayed in the android app homepage.
 @app.route('/android/homepage', methods=['GET', 'POST'])
 def android_homepage():
     input_json = request.get_json(force=True)
@@ -381,6 +413,7 @@ def android_homepage():
     return jresponse
 
 
+# Same as the homepage, but for the profile page.
 @app.route('/android/profile', methods=['GET', 'POST'])
 def android_profile():
     input_json = request.get_json(force=True)
@@ -432,6 +465,7 @@ def android_profile():
     return jresponse
 
 
+# This is refers to the external profile page, which is essentially the profile page of another user.
 @app.route('/android/external_profile', methods=['GET', 'POST'])
 def android_external_profile():
     input_json = request.get_json(force=True)
@@ -504,6 +538,7 @@ def android_external_profile():
     return jresponse
 
 
+# This is the page the app uses to download images (saved under the /uploads folder).
 @app.route('/android/uploads',  methods=['GET', 'POST'])
 def uploaded_file():
     token = request.args.get('Token')
@@ -517,6 +552,7 @@ def uploaded_file():
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
+# This handles the result of the research a user can do using the app in order to view another user's profile.
 @app.route('/android/research', methods=['GET', 'POST'])
 def android_research():
     input_json = request.get_json(force=True)
@@ -547,6 +583,7 @@ def android_research():
     return jresponse
 
 
+# This handles all the background operations to do in order to remove a friend request.
 @app.route('/android/remove_friend_request', methods=['GET', 'POST'])
 def remove_friend_request():
     input_json = request.get_json(force=True)
@@ -582,6 +619,7 @@ def remove_friend_request():
     return jresponse
 
 
+# This is essentially the opposite of the one above.
 @app.route('/android/friend_request', methods=['GET', 'POST'])
 def friend_request():
     input_json = request.get_json(force=True)
@@ -618,6 +656,8 @@ def friend_request():
     return jresponse
 
 
+# This handles the request from a user that wants to subscribe to another user in order to have access
+# to his data.
 @app.route('/android/subscription_request', methods=['GET', 'POST'])
 def subscription_request():
     input_json = request.get_json(force=True)
@@ -653,6 +693,7 @@ def subscription_request():
     return jresponse
 
 
+# This handles the background operation regarding the notification page of the app.
 @app.route('/android/notifications', methods=['GET', 'POST'])
 def android_notifications():
     input_json = request.get_json(force=True)
@@ -697,6 +738,8 @@ def android_notifications():
     return jresponse
 
 
+# This def handles the DB operation to do regarding an answer of a user's request (whether it is accepted, refused
+# or still waiting).
 @app.route('/android/notifications_request_answer', methods=['GET', 'POST'])
 def notifications_request_answer():
     input_json = request.get_json(force=True)
@@ -719,6 +762,7 @@ def notifications_request_answer():
     return jresponse
 
 
+# This is used to sync the app collected data with the DB.
 @app.route('/android/sync_health_data', methods=['GET', 'POST'])
 def sync_health_data():
     input_json = request.get_json(force=True)
@@ -748,6 +792,7 @@ def sync_health_data():
     return jresponse
 
 
+# This is used to handle background status when a user clears all the notifications in the app.
 @app.route('/android/notifications_clear_all', methods=['GET', 'POST'])
 def android_clear_all():
     input_json = request.get_json(force=True)
@@ -772,6 +817,7 @@ def android_clear_all():
     return jresponse
 
 
+# This is used to update the DB regarding general AutomatedSOS information.
 @app.route('/android/manage_automatedsos', methods=['GET', 'POST'])
 def manage_automatedsos():
     input_json = request.get_json(force=True)
@@ -797,6 +843,7 @@ def manage_automatedsos():
     return jresponse
 
 
+# This is used to update the DB regarding the settings for an emergency event.
 @app.route('/android/emergency_automatedsos', methods=['GET', 'POST'])
 def emergency_automatedsos():
     input_json = request.get_json(force=True)
@@ -848,7 +895,7 @@ def choose_service_from_location(latitude, longitude):
     return service
 
 
-#deprecated but useful defs
+# What follows are deprecated but useful defs.
 @app.route('/uploads', methods=['GET', 'POST'])
 def uploads():
     if 'file' not in request.files:
